@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import type {
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  Texture,
+  Vector3,
+  WebGLRenderer,
+} from "three";
 
 type TrackDirection = -1 | 0 | 1;
 
@@ -23,7 +30,10 @@ const INITIAL_STATE: GameState = {
   crossed: 0,
 };
 
-function makeFallbackTexture(kind: "enemy" | "tree" | "wreck") {
+function makeFallbackTexture(
+  THREE: typeof import("three"),
+  kind: "enemy" | "tree" | "wreck",
+) {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 384;
@@ -106,6 +116,12 @@ export default function Home() {
     const mount = mountRef.current;
     if (!mount) return;
 
+    let cancelled = false;
+    let disposeScene: (() => void) | undefined;
+
+    void import("three").then((THREE) => {
+    if (cancelled) return;
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#90856d");
     scene.fog = new THREE.FogExp2("#817761", 0.018);
@@ -113,7 +129,7 @@ export default function Home() {
     const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 220);
     camera.position.set(0, 2.2, 8);
 
-    let renderer: THREE.WebGLRenderer;
+    let renderer: WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: false,
@@ -160,7 +176,7 @@ export default function Home() {
     wireBelts.forEach((z, beltIndex) => {
       for (let row = 0; row < 3; row += 1) {
         const rowZ = z - row * 2.2;
-        const points: THREE.Vector3[] = [];
+        const points: Vector3[] = [];
         for (let x = -48; x <= 48; x += 4) {
           const y = 0.7 + ((x + row * 3) % 8 === 0 ? 0.22 : 0);
           points.push(new THREE.Vector3(x, y, rowZ));
@@ -191,10 +207,10 @@ export default function Home() {
     });
 
     const textureLoader = new THREE.TextureLoader();
-    const textures: Record<"enemy" | "tree" | "wreck", THREE.Texture> = {
-      enemy: makeFallbackTexture("enemy"),
-      tree: makeFallbackTexture("tree"),
-      wreck: makeFallbackTexture("wreck"),
+    const textures: Record<"enemy" | "tree" | "wreck", Texture> = {
+      enemy: makeFallbackTexture(THREE, "enemy"),
+      tree: makeFallbackTexture(THREE, "tree"),
+      wreck: makeFallbackTexture(THREE, "wreck"),
     };
 
     const tryTexture = (kind: keyof typeof textures, url: string) => {
@@ -207,9 +223,9 @@ export default function Home() {
           textures[kind] = texture;
           world.children.forEach((object) => {
             if (object.userData.kind === kind) {
-              (object as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>).material.map =
+              (object as Mesh<PlaneGeometry, MeshBasicMaterial>).material.map =
                 texture;
-              (object as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>).material.needsUpdate =
+              (object as Mesh<PlaneGeometry, MeshBasicMaterial>).material.needsUpdate =
                 true;
             }
           });
@@ -222,8 +238,8 @@ export default function Home() {
     tryTexture("tree", "/sprites/tree.png");
     tryTexture("wreck", "/sprites/wreck.png");
 
-    const billboards: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
-    const enemies: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
+    const billboards: Mesh<PlaneGeometry, MeshBasicMaterial>[] = [];
+    const enemies: Mesh<PlaneGeometry, MeshBasicMaterial>[] = [];
 
     const addBillboard = (
       kind: "enemy" | "tree" | "wreck",
@@ -278,7 +294,7 @@ export default function Home() {
       window.setTimeout(() => setFlash(null), 85);
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const hits = raycaster.intersectObjects(enemies.filter((enemy) => enemy.userData.alive));
-      const target = hits[0]?.object as THREE.Mesh | undefined;
+      const target = hits[0]?.object as Mesh | undefined;
       if (target) {
         target.userData.alive = false;
         target.visible = false;
@@ -382,14 +398,14 @@ export default function Home() {
     };
     animate();
 
-    return () => {
+    disposeScene = () => {
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
       renderer.dispose();
       world.traverse((object) => {
-        const mesh = object as THREE.Mesh;
+        const mesh = object as Mesh;
         mesh.geometry?.dispose();
         if (mesh.material) {
           const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -398,6 +414,14 @@ export default function Home() {
       });
       Object.values(textures).forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
+    };
+    }).catch(() => {
+      if (!cancelled) setRendererFailed(true);
+    });
+
+    return () => {
+      cancelled = true;
+      disposeScene?.();
     };
   }, [patchGame]);
 
