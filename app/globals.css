@@ -1,0 +1,421 @@
+@import "tailwindcss";
+
+:root {
+  --iron: #11120f;
+  --iron-light: #24251f;
+  --paper: #d8ceb4;
+  --rust: #9f4126;
+  --amber: #e2a746;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #080906;
+  color: var(--paper);
+  font-family: "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  touch-action: none;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+}
+
+.game-shell {
+  position: fixed;
+  inset: 0;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #111;
+  isolation: isolate;
+}
+
+.battlefield {
+  position: absolute;
+  inset: 0;
+  filter: sepia(0.32) saturate(0.76) contrast(1.14);
+}
+
+.battlefield::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(20, 16, 10, 0.12) 4px),
+    radial-gradient(circle at center, transparent 24%, rgba(13, 12, 8, 0.55) 100%);
+  mix-blend-mode: multiply;
+}
+
+.battlefield canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.armor {
+  position: absolute;
+  z-index: 3;
+  left: -2vw;
+  width: 104vw;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 24%, rgba(255, 255, 255, 0.035) 0 1px, transparent 2px),
+    radial-gradient(circle at 71% 60%, rgba(255, 255, 255, 0.028) 0 1px, transparent 2px),
+    linear-gradient(103deg, #0b0c0a 0%, #20211c 44%, #0b0c09 100%);
+  box-shadow: inset 0 0 100px #000;
+}
+
+.armor-top {
+  top: 0;
+  height: 30svh;
+  border-bottom: 4px solid #080906;
+}
+
+.armor-bottom {
+  bottom: 0;
+  height: 38svh;
+  border-top: 4px solid #080906;
+}
+
+.slit-edge {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  height: 10px;
+  pointer-events: none;
+  background: linear-gradient(#050504, #44443a 45%, #0c0d0a);
+  box-shadow: 0 0 22px #000;
+}
+
+.slit-edge-top {
+  top: calc(30svh - 5px);
+}
+
+.slit-edge-bottom {
+  bottom: calc(38svh - 5px);
+  transform: rotate(180deg);
+}
+
+.serial {
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #747466;
+  font: 600 10px/1 monospace;
+  letter-spacing: 0.2em;
+}
+
+.bolt {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #080906;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4b4c42, #10110e 65%);
+  box-shadow: 0 2px 4px #000;
+}
+
+.bolt-a { left: 7vw; bottom: 4vh; }
+.bolt-b { right: 7vw; bottom: 4vh; }
+.bolt-c { left: 7vw; top: 4vh; }
+.bolt-d { right: 7vw; top: 4vh; }
+
+.hud {
+  position: absolute;
+  z-index: 6;
+  top: calc(30svh + 12px);
+  left: 50%;
+  width: min(94vw, 640px);
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 1fr 70px 1fr;
+  align-items: center;
+  color: rgba(242, 225, 184, 0.86);
+  text-shadow: 0 2px 3px #000;
+  pointer-events: none;
+}
+
+.hud > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-family: monospace;
+}
+
+.hud > div:last-child {
+  justify-content: flex-end;
+}
+
+.hud strong {
+  font-size: 18px;
+}
+
+.hud-label {
+  color: rgba(242, 225, 184, 0.5);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
+
+.sight {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  margin: auto;
+  border: 1px solid rgba(226, 167, 70, 0.58);
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.sight::before,
+.sight::after {
+  position: absolute;
+  content: "";
+  background: rgba(226, 167, 70, 0.58);
+}
+
+.sight::before {
+  width: 74px;
+  height: 1px;
+  left: -12px;
+  top: 25px;
+}
+
+.sight::after {
+  width: 1px;
+  height: 74px;
+  top: -12px;
+  left: 25px;
+}
+
+.sight span {
+  position: absolute;
+  inset: 21px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.status-message {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: calc(38svh + 14px);
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgba(245, 224, 178, 0.72);
+  font: 700 10px/1 monospace;
+  letter-spacing: 0.22em;
+  text-shadow: 0 1px 3px #000;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.track-controls {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: min(92vw, 620px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.track-stack {
+  width: clamp(94px, 26vw, 150px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.track-name {
+  grid-column: 1 / -1;
+  color: #77776a;
+  font: 700 9px/1 monospace;
+  letter-spacing: 0.25em;
+  text-align: center;
+}
+
+.track-button,
+.fire-button,
+.briefing button {
+  border: 1px solid #4d4e43;
+  color: #a9a48f;
+  background: linear-gradient(#262720, #11120f);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05), 0 5px 12px #000;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.track-button {
+  height: clamp(62px, 12svh, 94px);
+  font-size: 22px;
+  border-radius: 8px 3px 3px 8px;
+}
+
+.track-button.reverse {
+  border-radius: 3px 8px 8px 3px;
+}
+
+.track-button.active {
+  color: #18130b;
+  border-color: #bd7b36;
+  background: var(--amber);
+  box-shadow: inset 0 3px 7px #70451e, 0 0 18px rgba(226, 167, 70, 0.28);
+  transform: translateY(2px);
+}
+
+.fire-button {
+  width: 74px;
+  height: 74px;
+  margin-bottom: 2px;
+  border-color: #76351f;
+  border-radius: 50%;
+  color: #e7bda5;
+  background: radial-gradient(circle at 40% 34%, #9c4328, #461b10 66%);
+  font: 800 12px/1 monospace;
+  letter-spacing: 0.1em;
+}
+
+.fire-button:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 4px 10px #250c07;
+}
+
+.briefing {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  display: flex;
+  padding: 8vh 24px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  background: rgba(6, 7, 5, 0.91);
+  backdrop-filter: blur(5px);
+}
+
+.briefing::before {
+  position: absolute;
+  inset: 6vw;
+  border: 1px solid #37382f;
+  content: "";
+  pointer-events: none;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  color: var(--amber);
+  font: 700 10px/1 monospace;
+  letter-spacing: 0.27em;
+}
+
+.briefing h1,
+.briefing h2 {
+  margin: 0;
+  color: #e3dbc4;
+  font-size: clamp(58px, 14vw, 112px);
+  font-weight: 950;
+  line-height: 0.76;
+  letter-spacing: -0.06em;
+  text-shadow: 7px 8px 0 #25261f;
+}
+
+.briefing h2 {
+  font-size: clamp(50px, 12vw, 88px);
+}
+
+.briefing > p:not(.eyebrow) {
+  max-width: 440px;
+  margin: 34px 0 22px;
+  color: #aaa48f;
+  font: 400 15px/1.55 Georgia, serif;
+}
+
+.briefing button {
+  min-width: 220px;
+  padding: 15px 22px;
+  border-color: #9a6230;
+  color: #f0d49a;
+  font: 800 12px/1 monospace;
+  letter-spacing: 0.16em;
+}
+
+.briefing small {
+  margin-top: 18px;
+  color: #5f6054;
+  font: 600 9px/1 monospace;
+  letter-spacing: 0.12em;
+}
+
+.flash-fire::after,
+.flash-hit::after {
+  position: absolute;
+  z-index: 15;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.flash-fire::after {
+  background: rgba(255, 196, 105, 0.28);
+}
+
+.flash-hit::after {
+  background: rgba(162, 38, 18, 0.38);
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+  .armor-top { height: 26svh; }
+  .armor-bottom { height: 34svh; }
+  .slit-edge-top { top: calc(26svh - 5px); }
+  .slit-edge-bottom { bottom: calc(34svh - 5px); }
+  .hud { top: calc(26svh + 8px); }
+  .status-message { bottom: calc(34svh + 10px); }
+  .track-button { height: 64px; }
+  .fire-button { width: 62px; height: 62px; }
+  .briefing { padding-block: 3vh; }
+  .briefing > p:not(.eyebrow) { margin: 22px 0 16px; }
+}
+
+@media (max-width: 430px) {
+  .hud {
+    width: 92vw;
+    grid-template-columns: 1fr 58px 1fr;
+  }
+  .sight {
+    transform: scale(0.78);
+  }
+  .track-controls {
+    width: 94vw;
+  }
+  .track-stack {
+    width: 112px;
+  }
+  .fire-button {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battlefield {
+    filter: sepia(0.22) saturate(0.72);
+  }
+  .track-button,
+  .fire-button {
+    transition: none;
+  }
+}
