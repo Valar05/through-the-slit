@@ -5,7 +5,7 @@ import type { Mesh, MeshBasicMaterial, PlaneGeometry, Texture, Vector3 } from "t
 
 type TrackDirection = -1 | 0 | 1;
 type ThreeModule = typeof import("three");
-const THREE_BOOTSTRAP_URL = "/vendor/three/bootstrap.js";
+const THREE_BOOTSTRAP_URL = "/vendor/three/engine-v9.js";
 
 declare global {
   interface Window {
@@ -61,7 +61,6 @@ function loadThreeInBrowser(): Promise<ThreeModule> {
     };
 
     window.addEventListener("three-engine-ready", finish, { once: true });
-    script.type = "module";
     script.src = THREE_BOOTSTRAP_URL;
     script.onerror = () => {
       window.clearTimeout(timeout);
