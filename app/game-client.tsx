@@ -1,10 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as THREE from "three";
 import type { Mesh, MeshBasicMaterial, PlaneGeometry, Texture, Vector3 } from "three";
 
 type TrackDirection = -1 | 0 | 1;
+type ThreeModule = typeof import("three");
+const THREE_BOOTSTRAP_URL = "/vendor/three/bootstrap.js";
+
+declare global {
+  interface Window {
+    __THREE_MODULE__?: ThreeModule;
+    __THREE_MODULE_PROMISE__?: Promise<ThreeModule>;
+  }
+}
 
 type RendererFailure = {
   heading: string;
@@ -29,8 +37,48 @@ const INITIAL_STATE: GameState = {
   crossed: 0,
 };
 
+function loadThreeInBrowser(): Promise<ThreeModule> {
+  if (window.__THREE_MODULE__) {
+    return Promise.resolve(window.__THREE_MODULE__);
+  }
+  if (window.__THREE_MODULE_PROMISE__) {
+    return window.__THREE_MODULE_PROMISE__;
+  }
+
+  window.__THREE_MODULE_PROMISE__ = new Promise<ThreeModule>((resolve, reject) => {
+    const script = document.createElement("script");
+    const timeout = window.setTimeout(() => {
+      reject(new Error("The battlefield engine timed out while loading."));
+    }, 15_000);
+
+    const finish = () => {
+      window.clearTimeout(timeout);
+      if (window.__THREE_MODULE__) {
+        resolve(window.__THREE_MODULE__);
+      } else {
+        reject(new Error("The battlefield engine loaded without its module."));
+      }
+    };
+
+    window.addEventListener("three-engine-ready", finish, { once: true });
+    script.type = "module";
+    script.src = THREE_BOOTSTRAP_URL;
+    script.onerror = () => {
+      window.clearTimeout(timeout);
+      reject(new Error(`Failed to load ${THREE_BOOTSTRAP_URL}`));
+    };
+    document.head.appendChild(script);
+  }).catch((error) => {
+    window.__THREE_MODULE_PROMISE__ = undefined;
+    throw error;
+  });
+
+  return window.__THREE_MODULE_PROMISE__;
+}
+
 function makeFallbackTexture(
   kind: "enemy" | "tree" | "wreck",
+  THREE: ThreeModule,
 ) {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
@@ -113,6 +161,12 @@ export default function GameClient() {
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+
+    let disposed = false;
+    let teardown = () => undefined;
+
+    void loadThreeInBrowser().then((THREE) => {
+    if (disposed) return;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#90856d");
@@ -204,9 +258,9 @@ export default function GameClient() {
 
     const textureLoader = new THREE.TextureLoader();
     const textures: Record<"enemy" | "tree" | "wreck", Texture> = {
-      enemy: makeFallbackTexture("enemy"),
-      tree: makeFallbackTexture("tree"),
-      wreck: makeFallbackTexture("wreck"),
+      enemy: makeFallbackTexture("enemy", THREE),
+      tree: makeFallbackTexture("tree", THREE),
+      wreck: makeFallbackTexture("wreck", THREE),
     };
 
     const tryTexture = (kind: keyof typeof textures, url: string) => {
@@ -394,7 +448,7 @@ export default function GameClient() {
     };
     animate();
 
-    return () => {
+    teardown = () => {
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       window.removeEventListener("keydown", keyDown);
@@ -409,7 +463,22 @@ export default function GameClient() {
         }
       });
       Object.values(textures).forEach((texture) => texture.dispose());
-      mount.removeChild(renderer.domElement);
+      if (renderer.domElement.parentNode === mount) {
+        mount.removeChild(renderer.domElement);
+      }
+    };
+    }).catch((error: unknown) => {
+      if (disposed) return;
+      const detail = error instanceof Error ? error.message : "The battlefield engine could not load.";
+      setRendererFailure({
+        heading: "ENGINE LOAD FAILED",
+        detail,
+      });
+    });
+
+    return () => {
+      disposed = true;
+      teardown();
     };
   }, [patchGame]);
 
