@@ -33,21 +33,20 @@ test("renders development preview metadata", async () => {
   assert.match(await response.text(), developmentPreviewMeta);
 });
 
-test("ships the battlefield engine as a browser-loadable asset", async () => {
+test("ships the battlefield engine through the normal client module graph", async () => {
   const clientAssets = new URL("../dist/client/assets/", import.meta.url);
   const files = await readdir(clientAssets);
   const pageFile = files.find((file) => /^page-.*\.js$/.test(file));
-  const threeFile = files.find((file) => /^three\.module-.*\.js$/.test(file));
 
   assert.ok(pageFile, "client page bundle is missing");
-  assert.ok(threeFile, "Three.js browser asset is missing");
 
-  const [pageSource, threeSource] = await Promise.all([
-    readFile(new URL(pageFile, clientAssets), "utf8"),
-    readFile(new URL(threeFile, clientAssets), "utf8"),
-  ]);
+  const pageSource = await readFile(new URL(pageFile, clientAssets), "utf8");
 
-  assert.match(pageSource, new RegExp(`/assets/${threeFile.replaceAll(".", "\\.")}`));
-  assert.match(pageSource, /import\([a-zA-Z_$][\w$]*\)/);
-  assert.match(threeSource, /\bWebGLRenderer\b/);
+  assert.doesNotMatch(pageSource, /three\.module-[\w-]+\.js/);
+  assert.doesNotMatch(pageSource, /import\([a-zA-Z_$][\w$]*\)/);
+  assert.match(
+    files.join("\n"),
+    /(?:page|three|vendor)-[\w-]+\.js/,
+    "the statically reachable engine bundle is missing",
+  );
 });
