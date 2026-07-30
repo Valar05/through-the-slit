@@ -50,21 +50,29 @@ test("ships the visible game shell in the initial client module graph", async ()
 
   assert.match(shellSource, /ENTER THE ARMOR/);
   assert.doesNotMatch(shellSource, /game-client-[\w-]+\.js/);
-  assert.match(shellSource, /\/vendor\/three\/bootstrap\.js/);
+  assert.match(shellSource, /\/vendor\/three\/engine-v9\.js/);
   assert.doesNotMatch(
     shellSource,
     /\bimport\(/,
     "the engine must not use Vinext's broken production import wrapper",
   );
-  await access(
-    new URL("../dist/client/vendor/three/bootstrap.js", import.meta.url),
+  const bootstrapUrl = new URL(
+    "../dist/client/vendor/three/engine-v9.js",
+    import.meta.url,
   );
-  await access(
-    new URL("../dist/client/vendor/three/three.module.min.js", import.meta.url),
+  await access(bootstrapUrl);
+  const bootstrapSource = await readFile(bootstrapUrl, "utf8");
+  assert.ok(
+    bootstrapSource.length > 300_000,
+    "the browser engine bootstrap must contain Three.js, not another loader",
   );
-  await access(
-    new URL("../dist/client/vendor/three/three.core.min.js", import.meta.url),
+  assert.doesNotMatch(
+    bootstrapSource,
+    /\b(?:import|export)\b|from\s*["']/,
+    "the production engine must be a self-contained classic script",
   );
+  assert.match(bootstrapSource, /three-engine-ready/);
+  assert.match(bootstrapSource, /WebGLRenderer/);
 });
 
 test("keeps Three.js out of the Cloudflare Worker module scope", async () => {
