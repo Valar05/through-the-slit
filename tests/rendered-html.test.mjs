@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const developmentPreviewMeta =
@@ -30,21 +30,41 @@ test("renders development preview metadata", async () => {
     response.headers.get("content-type") ?? "",
     /^text\/html\b/i,
   );
-  assert.match(await response.text(), developmentPreviewMeta);
+  const html = await response.text();
+  assert.match(html, developmentPreviewMeta);
+  assert.match(
+    html,
+    /THROUGH(?:<!--.*?-->)?<br\s*\/?>(?:<!--.*?-->)?THE SLIT/i,
+    "the first response must contain a visible briefing without waiting for hydration",
+  );
 });
 
-test("ships the battlefield engine through the normal client module graph", async () => {
+test("ships the visible game shell in the initial client module graph", async () => {
   const clientAssets = new URL("../dist/client/assets/", import.meta.url);
   const files = await readdir(clientAssets);
-  const gameFile = files.find((file) => /^game-client-.*\.js$/.test(file));
+  const shellFile = files.find((file) => /^browser-shell-.*\.js$/.test(file));
 
-  assert.ok(gameFile, "client game bundle is missing");
+  assert.ok(shellFile, "client game shell is missing");
 
-  const gameSource = await readFile(new URL(gameFile, clientAssets), "utf8");
+  const shellSource = await readFile(new URL(shellFile, clientAssets), "utf8");
 
-  assert.doesNotMatch(gameSource, /three\.module-[\w-]+\.js/);
-  assert.doesNotMatch(gameSource, /import\([a-zA-Z_$][\w$]*\)/);
-  assert.match(gameSource, /WebGLRenderer/);
+  assert.match(shellSource, /ENTER THE ARMOR/);
+  assert.doesNotMatch(shellSource, /game-client-[\w-]+\.js/);
+  assert.match(shellSource, /\/vendor\/three\/bootstrap\.js/);
+  assert.doesNotMatch(
+    shellSource,
+    /\bimport\(/,
+    "the engine must not use Vinext's broken production import wrapper",
+  );
+  await access(
+    new URL("../dist/client/vendor/three/bootstrap.js", import.meta.url),
+  );
+  await access(
+    new URL("../dist/client/vendor/three/three.module.min.js", import.meta.url),
+  );
+  await access(
+    new URL("../dist/client/vendor/three/three.core.min.js", import.meta.url),
+  );
 });
 
 test("keeps Three.js out of the Cloudflare Worker module scope", async () => {
