@@ -1,15 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import threeModuleUrl from "three?url";
-import type {
-  Mesh,
-  MeshBasicMaterial,
-  PlaneGeometry,
-  Texture,
-  Vector3,
-  WebGLRenderer,
-} from "three";
+import * as THREE from "three";
+import type { Mesh, MeshBasicMaterial, PlaneGeometry, Texture, Vector3 } from "three";
 
 type TrackDirection = -1 | 0 | 1;
 
@@ -37,7 +30,6 @@ const INITIAL_STATE: GameState = {
 };
 
 function makeFallbackTexture(
-  THREE: typeof import("three"),
   kind: "enemy" | "tree" | "wreck",
 ) {
   const canvas = document.createElement("canvas");
@@ -122,12 +114,6 @@ export default function Home() {
     const mount = mountRef.current;
     if (!mount) return;
 
-    let cancelled = false;
-    let disposeScene: (() => void) | undefined;
-
-    void import(/* @vite-ignore */ threeModuleUrl).then((THREE: typeof import("three")) => {
-    if (cancelled) return;
-
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#90856d");
     scene.fog = new THREE.FogExp2("#817761", 0.018);
@@ -135,7 +121,7 @@ export default function Home() {
     const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 220);
     camera.position.set(0, 2.2, 8);
 
-    let renderer: WebGLRenderer;
+    let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: false,
@@ -218,9 +204,9 @@ export default function Home() {
 
     const textureLoader = new THREE.TextureLoader();
     const textures: Record<"enemy" | "tree" | "wreck", Texture> = {
-      enemy: makeFallbackTexture(THREE, "enemy"),
-      tree: makeFallbackTexture(THREE, "tree"),
-      wreck: makeFallbackTexture(THREE, "wreck"),
+      enemy: makeFallbackTexture("enemy"),
+      tree: makeFallbackTexture("tree"),
+      wreck: makeFallbackTexture("wreck"),
     };
 
     const tryTexture = (kind: keyof typeof textures, url: string) => {
@@ -408,7 +394,7 @@ export default function Home() {
     };
     animate();
 
-    disposeScene = () => {
+    return () => {
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       window.removeEventListener("keydown", keyDown);
@@ -424,20 +410,6 @@ export default function Home() {
       });
       Object.values(textures).forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
-    };
-    }).catch((error: unknown) => {
-      if (!cancelled) {
-        const detail = error instanceof Error ? error.message : "The battlefield engine could not be loaded.";
-        setRendererFailure({
-          heading: "ENGINE LOAD FAILED",
-          detail,
-        });
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      disposeScene?.();
     };
   }, [patchGame]);
 
