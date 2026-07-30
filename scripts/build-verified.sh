@@ -18,6 +18,9 @@ if [[ ! -x "${vinext}" ]]; then
   exit 69
 fi
 
+echo "Building the self-contained browser engine..."
+node "${SITES_PROJECT_ROOT}/scripts/build-three-browser.mjs"
+
 echo "Running bounded vinext build..."
 timeout \
   --signal=TERM \
