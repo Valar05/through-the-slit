@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import threeModuleUrl from "three?url";
 import type {
   Mesh,
   MeshBasicMaterial,
@@ -11,6 +12,11 @@ import type {
 } from "three";
 
 type TrackDirection = -1 | 0 | 1;
+
+type RendererFailure = {
+  heading: string;
+  detail: string;
+};
 
 type GameState = {
   left: TrackDirection;
@@ -100,7 +106,7 @@ export default function Home() {
   const [game, setGame] = useState(INITIAL_STATE);
   const [message, setMessage] = useState("ENGINE COLD");
   const [flash, setFlash] = useState<"fire" | "hit" | null>(null);
-  const [rendererFailed, setRendererFailed] = useState(false);
+  const [rendererFailure, setRendererFailure] = useState<RendererFailure | null>(null);
 
   const patchGame = useCallback((patch: Partial<GameState>) => {
     Object.assign(gameRef.current, patch);
@@ -119,7 +125,7 @@ export default function Home() {
     let cancelled = false;
     let disposeScene: (() => void) | undefined;
 
-    void import("three").then((THREE) => {
+    void import(/* @vite-ignore */ threeModuleUrl).then((THREE: typeof import("three")) => {
     if (cancelled) return;
 
     const scene = new THREE.Scene();
@@ -135,8 +141,12 @@ export default function Home() {
         antialias: false,
         powerPreference: "high-performance",
       });
-    } catch {
-      setRendererFailed(true);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "The browser rejected the graphics context.";
+      setRendererFailure({
+        heading: "WEBGL BLOCKED",
+        detail,
+      });
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -415,8 +425,14 @@ export default function Home() {
       Object.values(textures).forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
     };
-    }).catch(() => {
-      if (!cancelled) setRendererFailed(true);
+    }).catch((error: unknown) => {
+      if (!cancelled) {
+        const detail = error instanceof Error ? error.message : "The battlefield engine could not be loaded.";
+        setRendererFailure({
+          heading: "ENGINE LOAD FAILED",
+          detail,
+        });
+      }
     });
 
     return () => {
@@ -546,11 +562,11 @@ export default function Home() {
         </section>
       )}
 
-      {rendererFailed && (
+      {rendererFailure && (
         <section className="briefing renderer-failed" role="alert">
           <p className="eyebrow">OBSERVATION PORT BLOCKED</p>
-          <h2>NO<br />WEBGL</h2>
-          <p>This browser cannot open the battlefield renderer. The game has stopped rather than showing a counterfeit world.</p>
+          <h2>{rendererFailure.heading}</h2>
+          <p>{rendererFailure.detail}</p>
         </section>
       )}
     </main>
