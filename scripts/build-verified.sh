@@ -29,4 +29,9 @@ timeout \
   "${vinext}" build
 
 "${script_dir}/validate-artifact.sh"
-node --test "${SITES_PROJECT_ROOT}/tests/rendered-html.test.mjs"
+node --test "${SITES_PROJECT_ROOT}"/tests/*.test.mjs
+
+echo "Running deterministic raycast combat guardrails..."
+node "${SITES_PROJECT_ROOT}/scripts/combat-raycast-sim.mjs"
+node "${SITES_PROJECT_ROOT}/scripts/infantry-combat-sim.mjs"
+node "${SITES_PROJECT_ROOT}/scripts/defense-depth-sim.mjs"

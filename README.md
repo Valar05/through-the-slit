@@ -1,108 +1,175 @@
-# vinext-starter
+# Through the Slit
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Through the Slit is a first-person Great War landship game seen through an
+armored observation port. Drive two living treads independently, break a
+defense in depth, keep the infantry war party connected, and grow the machine
+from what the battlefield feeds it.
 
-## Prerequisites
+Play the current production deployment:
+[through-the-slit.dclarke1005.chatgpt.site](https://through-the-slit.dclarke1005.chatgpt.site)
+
+Release state: **v1.0.0-rc1**. The accepted v85 battlefield is frozen; release
+candidate changes are limited to crash, corruption, viewport, control, audio,
+legibility, and deployment failures. Future mechanics belong in the v1.1
+foster-care ledger.
+
+## The run
+
+The landship advances through seeded Western Front acres made from rolling
+ground, crater fields, trench systems, communication cuts, wire, strongpoints,
+and reserve lines. The game alternates between four macro phases:
+
+1. **Breach** the prepared position and open a route through the wire.
+2. **Cross** with the war party close enough to remain a formation.
+3. **Consolidate** the acre after its screen, main, support, and reserve
+   echelons are broken.
+4. **Graft** one new organ when the nutrient bar is full, then return to the
+   battle. Acre capture does not mint a second upgrade offer.
+
+The organs fire for themselves. The player's direct combat verbs are steering
+the two treads, choosing the body presented to enemy fire, ramming open usable
+roads, and keeping threats inside living weapon arcs. A run ends when the
+landship's core fails or the war party is ruined.
+
+## Controls
+
+| Surface | Contract |
+| --- | --- |
+| Touch | Drag up or down on the left and right edges to drive each tread. Wide touch zones are enabled by default. |
+| Keyboard | `W` / `S` drive the left tread. `↑` / `↓` drive the right tread. |
+| Gunnery | Weapons fire automatically when a valid threat enters their arc. Turn the whole body to aim. |
+| Pause | Press `P` or `Escape`, or use the on-screen pause control. |
+| Formation | Ram open roads, reconnect separated infantry through the breach wake, and occupy ground together. |
+
+## Current source truth
+
+The release-candidate source implements:
+
+- a seeded, chunked terrain model shared by rendering, grounding, collision,
+  trenches, craters, and line-of-sight checks;
+- directional scute armor, living core and tread damage, ramming, HE and
+  anti-armor fire, artillery missions, and persistent battlefield damage;
+- prepared defense echelons with infantry, machine guns, flankers, observers,
+  satchel teams, carriers, and anti-armor positions;
+- an eighteen-body allied formation with visible fireteams, terrain-aware
+  rifle fire, suppression, casualties, reconnection, and capture duties;
+- nineteen run-local grafts across **Living Arsenal**, **Breach Body**, and
+  **War Party**, including mutually exclusive branches and cross-organ
+  offspring;
+- the first inheritance proof lineage:
+  **Martyr's Winch → Sapper Brood → corrected successor expression**;
+- designed Foley and a seven-track session-persistent OST with shuffle,
+  crossfade, and no restart on death or scene changes.
+
+Run-local grafts and inheritance are deliberately different systems. A graft
+belongs to the current build and dies with it. Inheritance records a witnessed
+responsibility, releases it from the player's custody, tests it in an unlike
+vessel, and requires correction before canonization. The current repository
+proves that loop for Martyr's Winch; it does not claim that every graft already
+has a finished hereditary lineage.
+
+## Humane settings and accessibility
+
+The in-game Humane Instrument Panel stores device-local preferences for:
+
+- reduced motion;
+- reduced flashes;
+- optional camera movement;
+- stronger contrast;
+- larger field text;
+- wider touch zones;
+- automatic pause when focus or screen state changes;
+- independent Foley and OST controls.
+
+The combat canvas exposes a descriptive label, status changes use live regions,
+menus and settings use native buttons and focus states, and the simulation can
+freeze while the pause menu is open. These affordances are part of the game
+contract. They do not make the heavily visual battlefield fully nonvisual; any
+claim of screen-reader playability requires its own end-to-end acceptance pass.
+
+## Repository and deployment identity
+
+This checkout is the source lineage bound by `.openai/hosting.json` to the
+Through the Slit Sites project. The public GitHub repository is a recovered
+mirror and may lag the Sites source.
+
+Treat the states separately:
+
+- a source commit proves that code exists;
+- a passing build proves that the artifact and automated contracts passed;
+- a successful Sites deployment proves that a saved version reached the
+  production runtime;
+- browser play and human review prove the user-visible game.
+
+Do not use a merge, a local build, or the existence of the production URL as
+proof that a particular revision is live. Verify the exact Sites deployment
+before making a deployment claim.
+
+## Architecture
+
+| Area | Source |
+| --- | --- |
+| Browser game and presentation | `app/game-client.tsx`, `app/globals.css` |
+| Terrain and tread contact | `app/terrain-model.mjs`, `app/tread-model.mjs` |
+| Combat and difficulty | `app/combat-model.mjs`, `app/difficulty-model.mjs` |
+| Allied infantry | `app/infantry-combat-model.mjs` |
+| Acre and nutrient progression | `app/acre-director.mjs`, `app/progression-model.mjs` |
+| Grafts | `app/graft-model.mjs`, `app/graft-catalog.tsx` |
+| Inheritance and Mendel judgment | `app/inheritance-model.mjs`, `app/mendel-judgment.tsx`, `app/correction-runtime.mjs` |
+| Audio | `app/sound-engine.ts`, `app/music-engine.ts`, `public/sfx/`, `public/ost/` |
+| Browser/Worker boundary | `scripts/build-three-browser.mjs`, `public/vendor/three/engine-v10.js` |
+
+The application uses React, Vinext, and Three.js. The production build emits a
+self-contained browser engine so Three.js and WebGL do not leak into the
+Cloudflare Worker module scope.
+
+## Acceptance and headless simulation
+
+Put a regression at the boundary it protects:
+
+| Evidence | Home |
+| --- | --- |
+| Combat, terrain, tread, difficulty, artillery, infantry, capture, and nutrient invariants | `tests/director-endurance.test.mjs` |
+| Inheritance state transitions, Mendel rails, foreign expression, and correction | `tests/inheritance-model.test.mjs` |
+| Rendered shell, browser/Worker split, asset contracts, UI copy, audio policy, and accessibility hooks | `tests/rendered-html.test.mjs` |
+| Deterministic armor, projectile, and artillery raycasts | `scripts/combat-raycast-sim.mjs` |
+| Infantry-only, tank-only, mixed-force, and passive-player balance guardrails | `scripts/infantry-combat-sim.mjs` |
+
+`npm run build` is the release gate. It builds the browser engine and Vinext
+artifact, validates the Sites output, runs all Node tests, then runs both
+deterministic combat simulations. `npm test` repeats the build gate before the
+test suite. Use `npm run simulate:combat` when iterating specifically on the
+headless combat models.
+
+The headless simulations are release evidence for deterministic rules and
+balance guardrails. They are not evidence that terrain reads clearly, effects
+land with enough spectacle, the controls feel good on a phone, or the deployed
+game matches the source. Those remain browser and human acceptance work.
+
+## Development
+
+Prerequisites:
 
 - Node.js `>=22.13.0`
 - Linux with `flock`, `curl`, and GNU `timeout`
 
-## Sites Lifecycle
+Useful commands:
 
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout and then validates the Sites artifact. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm run install:ci
+npm run dev
+npm run build
+npm run lint
+npm run simulate:combat
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+The install and build wrappers are intentionally bounded and non-retrying.
+Preserve `.openai/hosting.json`, the existing lockfile, the Vinext/Sites build
+scripts, and the browser-engine boundary when changing infrastructure.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## Release and recovery
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Diagnostic Commands
-
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build and validate the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build, validate, and verify the rendered development-preview metadata
-- `npm run validate:artifact`: recheck an existing artifact's manifest and ESM `default.fetch` export
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-Use build and validation commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
-
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+`RELEASE.md` is the resurrection path: exact gates, provenance checks, device
+acceptance, Sites deployment identity, and promotion rules. `KNOWN_LIMITATIONS.md`
+records honest boundaries. A GitHub tag proves preserved source; the production
+URL is live only after the matching Sites deployment is verified separately.
