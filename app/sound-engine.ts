@@ -191,6 +191,22 @@ export class SoundEngine {
     this.master.gain.setTargetAtTime(0, this.context.currentTime, 0.035);
   }
 
+  async surrenderAudioFocus() {
+    if (!this.context || this.context.state === "closed") return;
+    if (this.context.state === "running") {
+      await this.context.suspend().catch(() => undefined);
+    }
+  }
+
+  async reclaimAudioFocus(enabled: boolean) {
+    this.enabled = enabled;
+    if (!this.context || this.context.state === "closed") return;
+    if (this.context.state === "suspended") {
+      await this.context.resume().catch(() => undefined);
+    }
+    this.setEnabled(enabled);
+  }
+
   private buildGraph() {
     const AudioContextConstructor =
       window.AudioContext ??
