@@ -24,15 +24,5 @@ jobs:
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             exit 0
           fi
-          gh release create "$RELEASE_TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$TARGET_SHA" \
-            --title "Through the Slit v1.0.0-rc1 — Evolution of the Tank Game" \
-            --notes "The feral release candidate. Exact source mirror of production v86. Includes the release readability pass, deferred graft interruption, all seven OST masters, production art and Foley, provenance, recovery instructions, known limitations, and 54 passing production gates.
-
-Play: https://through-the-slit.dclarke1005.chatgpt.site
-
-Production source: Sites commit 2f69a185263a11d95bba6d5113f156a38e5cfdb9
-GitHub source: $TARGET_SHA
-
-Accepted evidence: full Pixel gameplay recording and creator audio verdict. WebGL is required; the battlefield is not claimed to be fully nonvisual. See KNOWN_LIMITATIONS.md and RELEASE.md."
+          notes=$'The feral release candidate. Exact source mirror of production v86. Includes the release readability pass, deferred graft interruption, all seven OST masters, production art and Foley, provenance, recovery instructions, known limitations, and 54 passing production gates.\n\nPlay: https://through-the-slit.dclarke1005.chatgpt.site\n\nProduction source: Sites commit 2f69a185263a11d95bba6d5113f156a38e5cfdb9\nGitHub source: 0c2dfbba59375085fff0b15adb28c2f6d741c4d3\n\nAccepted evidence: full Pixel gameplay recording and creator audio verdict. WebGL is required; the battlefield is not claimed to be fully nonvisual. See KNOWN_LIMITATIONS.md and RELEASE.md.'
+          gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --target "$TARGET_SHA" --title "Through the Slit v1.0.0-rc1 — Evolution of the Tank Game" --notes "$notes"
