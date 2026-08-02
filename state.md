@@ -1,85 +1,56 @@
-# Through the Slit — State
+# Through the Slit — Project State
 
 Updated: 2026-08-02
-State owner: Adam, publishing through Home Center
-Project authority: Drew Clarke
+State owner: Adam
+Authority: Drew Clarke
 Authoritative home: https://github.com/Valar05/through-the-slit/blob/main/state.md
-Drive control hub: https://drive.google.com/drive/folders/1csOhZXk9tCrob4JX95TPBE-wpHC53q8m
 
 ## Commission
 
-Outcome: Ship and preserve a public, forkable first-person Great War landship game viewed through an armored slit, with living treads, defense in depth, an infantry war party, acre consolidation, grafts, and corrected inheritance.
-Owner/executor: Drew owns acceptance and creative authority; Adam advances source, release integrity, and durable state through authorized lanes.
-Method/workflow: Preserve the accepted battlefield; separate source, build, deployment, browser, and human evidence; route future mechanics to the v1.1 foster-care ledger.
-Lane/tool: Public GitHub repository and ChatGPT Sites; compact Drive control records; ChatGPT Library for broad assets.
-Exclusions: No post-freeze feature drift in v1.0.0-rc1; no source commit claimed live without deployment identity; no headless test claimed as visual or device acceptance; no lyrics silently promoted into game canon.
-Evidence: Repository readback, build/test gates, exact Sites deployment identity, browser play, and human/device review.
-Delivery: Production web game plus public forkable source.
+Ship and preserve a public, forkable first-person Great War landship game viewed through an armored slit. Maintain the accepted battlefield while improving release integrity, accessibility, and durable distribution. Drew owns creative and perceptual acceptance; Adam advances source and release evidence through GitHub, ChatGPT Sites, and approved distribution lanes.
 
-## Capability State
+## Sealed decisions
 
-Requested: Complete, intense, accessible web game that runs on weak mobile hardware and preserves the war-party/terrain thesis.
-Implemented: Repository truth describes seeded chunked terrain; treads; armor and artillery; defense echelons; eighteen-body allied formation; nineteen grafts; first corrected inheritance lineage; designed Foley; seven-track OST; accessibility settings.
-Tested: Repository defines build, Node test, raycast, infantry-combat, and endurance gates. This bootstrap did not rerun current HEAD.
-Deployed: A production URL exists, but this bootstrap has not yet matched its exact deployment to current source.
-Callable: Production URL is named; live browser canary was not performed here.
-Delivered: Public repository and compact Drive hub exist. This state file requires readback before the bootstrap is complete.
-Accepted: Repository truth records the v85 battlefield as accepted and frozen. The current release candidate has not been newly accepted in this bootstrap.
-
-## Sealed Decisions
-
-- Release state: v1.0.0-rc1.
-- Freeze: accepted v85 battlefield.
-- RC changes are limited to crash, corruption, viewport, control, audio, legibility, and deployment failures.
-- Future mechanics belong in the v1.1 foster-care ledger.
-- Player verbs center on two living treads, body presentation, ramming, threat arcs, and formation custody.
-- Breach is incomplete without consolidation and the war party.
-- Run-local grafts die with the current build; inheritance requires witnessed responsibility, release from custody, unlike expression, and correction.
+- Release line: `v1.0.0-rc1`; accepted v85 battlefield remains frozen.
+- RC changes are limited to crash, corruption, viewport, control, audio, legibility, accessibility, and deployment failures. Future mechanics belong in the v1.1 foster-care lane.
 - Public and forkable.
-- Accessibility and humane settings are part of the game contract; full nonvisual playability is not claimed without its own acceptance pass.
-- “Barbered wire” is protected vocabulary where the project uses it.
-- Difficulty is a genotype, not a ladder. The accepted v1.1 doctrine uses named threat × custody phenotypes, preserves accessibility as score-neutral, forbids HP-inflation difficulty, and remains outside v1.0.0-rc1.
+- Accessibility is score-neutral and first-class; full nonvisual battlefield playability is not claimed.
+- Difficulty is a genotype, not a ladder. The accepted v1.1 doctrine remains design-only and outside this RC.
+- “Barbered wire” remains protected vocabulary where the project uses it.
 
-## Working Set
+## Production truth
 
-- Repository: https://github.com/Valar05/through-the-slit
-- Production: https://through-the-slit.dclarke1005.chatgpt.site
-- README at bootstrap: blob SHA `d4a98878b4b719ba2e0443fcecef392acf94a0c9`.
-- Drive Writing: https://docs.google.com/document/d/1GjOn233X6TDVh5M5L_-_0QkamLwUJ4bShXHiYXXI-RM/edit
-- Drive Game: https://docs.google.com/document/d/1MPJ-jXtxDPM_1clRl9LKAkK1KesUKnBK1O-eFBH3xyg/edit
-- Drive Shared: https://docs.google.com/document/d/1oZzYjvGLUKZePbtZ0qJr3TugyoRVSMsVNcGw3PYtsQ0/edit
-- Important established Drive source: GAME BIBLE — Through the Slit — Endless Breach and Consolidation, `1VGLFYGPNUClylzgMCyGEYrJoSNECg17ep_R82uQi4io`.
-- Accepted v1.1 doctrine: [DIFFICULTY GENOTYPES — Through the Slit — The War Chooses What Thrives](https://docs.google.com/document/d/1NSnTizgTHW4fHr-mAFBP-YuXfwPr51mHPZp4Umq_gRU/edit).
+- Public game: https://through-the-slit.dclarke1005.chatgpt.site
+- Current production lineage: Sites version 96; functional intro correction commit `007514d31730acc843d111af4fce358be342aa17`, followed only by state checkpoints.
+- Public source: https://github.com/Valar05/through-the-slit
+- The corrected intro source is published to GitHub main through audited Home Center file mutations. The cinematic was imported by successful workflow run `30765890586` at commit `9efda721de90c9d0cefaf20c4ea8405727d47926`; its Git blob `117e75894908753dd70f776516519972ab67152f` matches the local production asset and the import was SHA-256 gated to `cabbd4a795db9b3ba44e75b222ca5d4bafccf6c70bcce32661a5c837d593607b`.
+- An itch.io release is requested but not yet implemented or deployed. `ITCH.md` records the current Butler finding and form packet.
 
-## Active Gate
+## Sealed intro behavior
 
-Exact source-to-Sites deployment identity and current human/device acceptance remain unverified in this bootstrap. A public URL alone does not close the release gate. Difficulty Genotypes is accepted design only; implementation and runtime acceptance remain future v1.1 work.
+- A static, non-flashing notice appears before first exposure.
+- Equal-authority choices: safer static presentation, full motion, or refuse and continue.
+- Refusal is remembered on-device, never blocks play, and voluntary replay remains in the menu.
+- Both playback modes retain pause, scrub, mute, captions, action notes, and immediate skip.
+- Safer presentation suppresses motion while preserving soundtrack, timed captions, and visual-action descriptions.
+- The warning names graphic violence, blood/death/corpses, fleshy war-machine anatomy/body horror, artillery/weapon impacts, abrupt brightness changes, and intense sound.
+- The rejected four-minute presentation is superseded for first-run/replay by the 29-second title chorus from `01:02.000` through `01:30.920`.
+- Captions are phrase-level with an outline-led presentation rather than stacked faux-dub blocks.
 
-## Next Authorized Action
+## Evidence
 
-Verify the exact Sites deployment against the frozen release-candidate source, run the production browser canary, then perform the allowed viewport/control/legibility/device checks without admitting v1.1 mechanics into the RC.
+- The complete production build passed all 57 release guardrails after the 29-second correction.
+- Browser QA verified warning duration, full-motion source offset, phrase-level captions, end-to-menu behavior, refusal persistence, voluntary replay, and motion suppression in safer-static mode.
+- The corrected experience is deployed on Sites and was read back at the public URL.
+- Human audiovisual acceptance remains Drew's; machine and browser evidence do not overrule his eyes or ears.
 
-## Evidence Pointers
+## Active gate
 
-- Repository README: https://github.com/Valar05/through-the-slit/blob/main/README.md
-- Production: https://through-the-slit.dclarke1005.chatgpt.site
+GitHub publication is complete: every corrected source file and the cinematic survived repository readback. Butler linkage remains blocked by packaging: the Sites build is server-rendered and does not emit the standalone `index.html` package itch.io requires. Do not call itch.io linked until a standalone static build or an explicitly approved launcher exists, the API key is stored as `BUTLER_API_KEY` outside source, and a pushed channel is verified on the game page.
+
+## Working set
+
+- Release procedure: `RELEASE.md`
+- Itch/Butler packet: `ITCH.md`
 - Game Bible: https://docs.google.com/document/d/1VGLFYGPNUClylzgMCyGEYrJoSNECg17ep_R82uQi4io/edit
-- Drive control hub: https://drive.google.com/drive/folders/1csOhZXk9tCrob4JX95TPBE-wpHC53q8m
-
-## Open Questions
-
-The lyric draft's continuation after “If one hull dies,” is not recovered in the important Drive record. Do not invent it.
-
-## ChatGPT Library Assets
-
-| Asset | Library identity/version | Role | Status | Consumer | Verification |
-|---|---|---|---|---|---|
-| Through-the-Slit-Terrain-and-Trench-Handoff.md | `libfile_934cead04f148191a95bc5bced604434`; version unavailable | Terrain/trench implementation handoff | source | Game | Full text read 2026-08-02; runtime result still requires build/browser evidence |
-| Through-the-Slit-Ray-Combat-Diagnostic-v63.md | `libfile_014965da247c8191b48231809056030b`; version unavailable | Combat diagnostic | evidence | Game | Read 2026-08-02; does not prove current production |
-| FLESHpunk_GREAT_WAR_CAMPAIGN_BIBLE.md | `libfile_3c57939e9f8081918f4bf5fed67568b9`; version unavailable | Great War doctrine/canon | source | Writing/Shared/Game | Relevant doctrine retrieved 2026-08-02 |
-| Fortress_Online_Medieval_Fleshpunk_Art_Bible.pdf | `libfile_fba9ab332960819180ee911e769ea0ea`; version unavailable | Visual direction | source | Game | Visual acceptance remains artifact-specific |
-
-## Recent Delta
-
-- 2026-08-02: Accepted and saved `Difficulty Genotypes — The War Chooses What Thrives` for the v1.1 foster-care lane; linked it from the Game control hub; made no RC implementation change.
-- 2026-08-02: Bootstrapped repository-root state plus compact Drive Writing, Game, and Shared control records. Preserved the recovered lyric portion without inventing its continuation.
+- Difficulty doctrine: https://docs.google.com/document/d/1NSnTizgTHW4fHr-mAFBP-YuXfwPr51mHPZp4Umq_gRU/edit
