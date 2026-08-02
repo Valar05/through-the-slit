@@ -1,0 +1,53 @@
+name: Deploy itch.io HTML5 build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch-html5-release
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify release credential is configured
+        run: test -n "$BUTLER_API_KEY"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and validate standalone itch edition
+        run: npm run build:itch
+
+      - name: Install Butler from itch.io
+        run: |
+          BUTLER_VERSION="$(curl --fail --silent --show-error --location \
+            https://broth.itch.zone/butler/linux-amd64/LATEST)"
+          curl --fail --silent --show-error --location \
+            --output "$RUNNER_TEMP/butler.zip" \
+            "https://broth.itch.zone/butler/linux-amd64/${BUTLER_VERSION}/archive/default"
+          unzip -q "$RUNNER_TEMP/butler.zip" -d "$RUNNER_TEMP/butler"
+          chmod +x "$RUNNER_TEMP/butler/butler"
+          echo "$RUNNER_TEMP/butler" >> "$GITHUB_PATH"
+
+      - name: Preview Butler changes
+        run: butler push-preview --changes-only dist-itch valarsbeard/through-the-slit:html5
+
+      - name: Push HTML5 channel
+        run: |
+          VERSION="$(node -p "require('./package.json').version")-${GITHUB_SHA::7}"
+          butler push --if-changed --userversion "$VERSION" \
+            dist-itch valarsbeard/through-the-slit:html5
