@@ -90,7 +90,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(gameBundle, /AP GUN TRAVERSES/);
   assert.match(gameBundle, /OBSERVER FLARE/);
   assert.match(gameBundle, /FIRE FOR EFFECT/);
-  assert.match(gameBundle, /FIVE POINTS OF TISSUE, THEN FORWARD/);
+  assert.match(gameBundle, /FIELD CONSOLIDATION CLOSES THE WORST WOUNDS/);
   assert.doesNotMatch(gameBundle, /ANSWERS WITH A COUNTERATTACK/);
   assert.match(gameBundle, /Needle Litter/);
   assert.match(gameBundle, /Rib Nursery/);
@@ -289,6 +289,17 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(gameSource, /canvas\.dataset\.turretCursor/);
   assert.match(gameSource, /\/sprites\/v28\/enemy-threats-sheet\.png/);
   assert.match(gameSource, /\/sprites\/friendly-infantry-fleshpunk-v43\.png/);
+  assert.match(gameSource, /FRIENDLY_ATLAS_VERTICAL_OVERLAP = 64/);
+  assert.match(gameSource, /const woundedRow = isFriendlyAtlas && row === 2/);
+  assert.match(gameSource, /const kneelingRow = isFriendlyAtlas && row === 1/);
+  assert.match(
+    gameSource,
+    /row \* sourceHeight -[\s\S]*?woundedRow \? FRIENDLY_ATLAS_VERTICAL_OVERLAP : 0/,
+  );
+  assert.match(
+    gameSource,
+    /sourceHeight -[\s\S]*?kneelingRow \? FRIENDLY_ATLAS_VERTICAL_OVERLAP : 0/,
+  );
   assert.match(gameSource, /\/sprites\/v28\/impact-effects-sheet\.png/);
   assert.match(
     gameSource,
