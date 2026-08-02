@@ -1,11 +1,11 @@
 const OST_TRACKS = [
-  "/ost/iron-bellows.mp3",
-  "/ost/iron-bellows-ii.mp3",
-  "/ost/bellows-grit.mp3",
-  "/ost/bellows-breach.mp3",
-  "/ost/bellows-breach-ii.mp3",
-  "/ost/ruptured-bellows.mp3",
-  "/ost/ruptured-bellows-ii.mp3",
+  "./ost/iron-bellows.mp3",
+  "./ost/iron-bellows-ii.mp3",
+  "./ost/bellows-grit.mp3",
+  "./ost/bellows-breach.mp3",
+  "./ost/bellows-breach-ii.mp3",
+  "./ost/ruptured-bellows.mp3",
+  "./ost/ruptured-bellows-ii.mp3",
 ] as const;
 
 const CROSSFADE_SECONDS = 6;
