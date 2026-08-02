@@ -1,7 +1,8 @@
 name: publish-rc1
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
@@ -20,6 +21,9 @@ jobs:
         run: |
           set -euo pipefail
           test "$TARGET_SHA" = "0c2dfbba59375085fff0b15adb28c2f6d741c4d3"
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            exit 0
+          fi
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$TARGET_SHA" \
