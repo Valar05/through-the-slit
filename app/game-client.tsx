@@ -157,7 +157,7 @@ const COMBAT_RENDER_DPR_CAP = 1;
 const EFFECT_PIXEL_GRID = 2;
 const TERRAIN_CHUNK_BUILD_BUDGET = 2;
 const TERRAIN_CAMERA_NEAR = 0.35;
-const SKYBOX_URL = "/textures/western-front-skybox-v59.webp";
+const SKYBOX_URL = "./textures/western-front-skybox-v59.webp";
 type Screen = "menu" | "playing" | "graft" | "dead";
 type MenuPanel = "main" | "settings" | "controls";
 type SettingsOrigin = "menu" | "pause";
@@ -2129,14 +2129,14 @@ export default function GameClient() {
       return atlas;
     };
     const atlases = {
-      enemy: loadAtlas("/sprites/v28/enemy-threats-sheet.png"),
-      friendly: loadAtlas("/sprites/friendly-infantry-fleshpunk-v43.png"),
-      effects: loadAtlas("/sprites/v28/impact-effects-sheet.png"),
-      environment: loadAtlas("/sprites/v43-environment-atlas-hyperbolic-hair.png"),
-      threats: loadAtlas("/sprites/v31/threat-variants-atlas-v31.png"),
-      vfx: loadAtlas("/sprites/v31/vfx-atlas-v31.png"),
-      martyrsWinch: loadAtlas("/sprites/martyrs-winch-ancestor-v82.png"),
-      sapperBrood: loadAtlas("/sprites/sapper-brood-martyrs-winch-v81.png"),
+      enemy: loadAtlas("./sprites/v28/enemy-threats-sheet.png"),
+      friendly: loadAtlas("./sprites/friendly-infantry-fleshpunk-v43.png"),
+      effects: loadAtlas("./sprites/v28/impact-effects-sheet.png"),
+      environment: loadAtlas("./sprites/v43-environment-atlas-hyperbolic-hair.png"),
+      threats: loadAtlas("./sprites/v31/threat-variants-atlas-v31.png"),
+      vfx: loadAtlas("./sprites/v31/vfx-atlas-v31.png"),
+      martyrsWinch: loadAtlas("./sprites/martyrs-winch-ancestor-v82.png"),
+      sapperBrood: loadAtlas("./sprites/sapper-brood-martyrs-winch-v81.png"),
     };
     const terrainScene = new THREE.Scene();
     terrainScene.fog = new THREE.Fog(0x686866, 510, 1120);
@@ -2227,7 +2227,7 @@ export default function GameClient() {
     groundImage.onerror = () => {
       groundTextureState.failed = true;
     };
-    groundImage.src = "/textures/muddy-ground-v29.webp";
+    groundImage.src = "./textures/muddy-ground-v29.webp";
 
     const toonBands = new Uint8Array([42, 91, 154, 224]);
     const toonGradient = new THREE.DataTexture(
