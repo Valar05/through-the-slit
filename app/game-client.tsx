@@ -7392,46 +7392,57 @@ export default function GameClient() {
         <section className="briefing">
           {menuPanel === "settings" ? settingsPanel : menuPanel === "controls" ? controlsPanel : (
             <div className="menu-panel main-menu" aria-labelledby="game-title">
-              <p className="eyebrow">SPEARHEAD DEFENSE // GREAT WAR</p>
-              <h1 id="game-title">
-                THROUGH
-                <br />
-                THE SLIT
-              </h1>
-              <p>
-                The guns are organs, not buttons. Steer threats into their living arcs,
-                keep the war party connected, and feed a cumulative body from captured ground.
-              </p>
-              <nav className="menu-actions" aria-label="Main menu">
-                <button
-                  onClick={resumeFromMainMenu}
-                  disabled={engineState === "building"}
-                  autoFocus
-                >
-                  {engineState === "building"
-                    ? "WAKING THE BATTLEFIELD…"
-                    : engineState === "failed"
-                      ? "TRY THE FIRST BREACH AGAIN"
-                      : hasActiveRun
-                        ? "RETURN TO THE BREACH"
-                        : "ENTER THE FIRST BREACH"}
-                </button>
-                {hasActiveRun ? (
-                  <button onClick={startGame} disabled={engineState === "building"}>
-                    BEGIN A NEW BREACH
+              <figure className="mendels-procession-hero">
+                <img
+                  src="/mendels-procession-hero.webp"
+                  alt="A living Great War landship on twin tendon rails, its root-feet gripping crater mud."
+                />
+                <figcaption>
+                  MENDEL&apos;S PROCESSION // TANK KATA MADE ANATOMY
+                </figcaption>
+              </figure>
+              <div className="menu-copy">
+                <p className="eyebrow">SPEARHEAD DEFENSE // GREAT WAR</p>
+                <h1 id="game-title">
+                  THROUGH
+                  <br />
+                  THE SLIT
+                </h1>
+                <p>
+                  The guns are organs, not buttons. Steer threats into their living arcs,
+                  keep the war party connected, and feed a cumulative body from captured ground.
+                </p>
+                <nav className="menu-actions" aria-label="Main menu">
+                  <button
+                    onClick={resumeFromMainMenu}
+                    disabled={engineState === "building"}
+                    autoFocus
+                  >
+                    {engineState === "building"
+                      ? "WAKING THE BATTLEFIELD…"
+                      : engineState === "failed"
+                        ? "TRY THE FIRST BREACH AGAIN"
+                        : hasActiveRun
+                          ? "RETURN TO THE BREACH"
+                          : "ENTER THE FIRST BREACH"}
                   </button>
+                  {hasActiveRun ? (
+                    <button onClick={startGame} disabled={engineState === "building"}>
+                      BEGIN A NEW BREACH
+                    </button>
+                  ) : null}
+                  <button type="button" onClick={() => openSettings("menu")}>HUMANE SETTINGS</button>
+                  <button type="button" onClick={() => setMenuPanel("controls")}>HOW TO DRIVE</button>
+                </nav>
+                {engineState === "failed" ? (
+                  <strong className="engine-start-failure" role="alert">
+                    THE BATTLEFIELD FAILED BEFORE FIRST CONTACT. THE PORT REMAINS OPEN FOR RETRY.
+                  </strong>
                 ) : null}
-                <button type="button" onClick={() => openSettings("menu")}>HUMANE SETTINGS</button>
-                <button type="button" onClick={() => setMenuPanel("controls")}>HOW TO DRIVE</button>
-              </nav>
-              {engineState === "failed" ? (
-                <strong className="engine-start-failure" role="alert">
-                  THE BATTLEFIELD FAILED BEFORE FIRST CONTACT. THE PORT REMAINS OPEN FOR RETRY.
-                </strong>
-              ) : null}
-              <small>
-                FRONT SEED {coldSeed} · ONLY THE TWIN TREADS DURING BATTLE · AUTO-FIRING ORGANS · P / ESC PAUSES
-              </small>
+                <small>
+                  FRONT SEED {coldSeed} · ONLY THE TWIN TREADS DURING BATTLE · AUTO-FIRING ORGANS · P / ESC PAUSES
+                </small>
+              </div>
             </div>
           )}
         </section>
