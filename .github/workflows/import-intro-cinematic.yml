@@ -1,0 +1,29 @@
+name: Import verified intro cinematic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the deployed cinematic
+        run: |
+          mkdir -p public/cinematics
+          curl --fail --location --retry 3 \
+            --output public/cinematics/through-the-slit-intro-v4.mp4 \
+            https://through-the-slit.dclarke1005.chatgpt.site/cinematics/through-the-slit-intro-v4.mp4
+          echo "cabbd4a795db9b3ba44e75b222ca5d4bafccf6c70bcce32661a5c837d593607b  public/cinematics/through-the-slit-intro-v4.mp4" \
+            | sha256sum --check --strict
+      - name: Commit the verified asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/cinematics/through-the-slit-intro-v4.mp4
+          git diff --cached --quiet && exit 0
+          git commit -m "Add verified intro cinematic"
+          git push
