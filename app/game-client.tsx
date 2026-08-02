@@ -7103,6 +7103,10 @@ export default function GameClient() {
           <p>The organs fire for themselves. Turn the whole body until a threat enters the slit.</p>
         </article>
         <article>
+          <strong>TANK KATA</strong>
+          <p>Institutional law: Never receive force you can redirect. Never redirect force you can evade. Never evade away from the objective.</p>
+        </article>
+        <article>
           <strong>WAR PARTY</strong>
           <p>Ram open roads, stay close enough to reconnect, and capture ground together.</p>
         </article>
