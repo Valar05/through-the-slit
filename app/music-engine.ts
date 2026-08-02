@@ -35,6 +35,7 @@ export class OstPlayer {
   private crossfading = false;
   private crossfadeFrame = 0;
   private monitor = 0;
+  private focusResumeTime = 0;
 
   constructor() {
     const makeDeck = () => {
@@ -94,6 +95,43 @@ export class OstPlayer {
     await activePlay.catch(() => undefined);
 
     this.monitor = window.setInterval(() => this.tick(), 250);
+  }
+
+  /**
+   * Stop being an Android media candidate when the game leaves the foreground.
+   * Muting is insufficient: a silent, still-playing HTMLAudioElement can retain
+   * the headset transport controls. Detaching the decks lets the previous
+   * native player (for example Spotify) reclaim those controls.
+   */
+  surrenderAudioFocus() {
+    if (!this.started) return;
+    if (this.crossfading) {
+      cancelAnimationFrame(this.crossfadeFrame);
+      this.crossfading = false;
+    }
+    const active = this.decks[this.activeDeck];
+    this.focusResumeTime = active.currentTime || 0;
+    this.decks.forEach((deck) => {
+      deck.pause();
+      deck.removeAttribute("src");
+      deck.load();
+    });
+    try {
+      if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "none";
+    } catch {}
+  }
+
+  async reclaimAudioFocus() {
+    if (!this.started || this.currentTrack < 0) return;
+    const active = this.decks[this.activeDeck];
+    active.src = OST_TRACKS[this.currentTrack];
+    active.currentTime = this.focusResumeTime;
+    active.volume = this.enabled ? MUSIC_VOLUME : 0;
+    const inactive = this.decks[1 - this.activeDeck];
+    inactive.src = OST_TRACKS[this.queuedTrack];
+    inactive.currentTime = 0;
+    inactive.volume = 0;
+    await active.play().catch(() => undefined);
   }
 
   private refillBag() {
