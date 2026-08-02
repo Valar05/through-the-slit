@@ -120,6 +120,11 @@ const {
   canPresentGraftOffer,
   tacticalExplosionRadiusCap,
 } = await import("./defense-depth-model.mjs");
+const {
+  ENEMY_ATLAS_POSE_RECTS,
+  THREAT_ATLAS_POSE_RECTS,
+  enemyCorpseCell,
+} = await import("./sprite-atlas-model.mjs");
 const GraftCatalog = lazy(() => import("./graft-catalog"));
 const CanonizationPlate = lazy(() => import("./canonization-plate"));
 
@@ -2456,6 +2461,12 @@ export default function GameClient() {
       const row = Math.floor(cell / 4);
       const column = cell % 4;
       const isFriendlyAtlas = atlas === atlases.friendly;
+      const cleanPoseRect =
+        atlas === atlases.enemy
+          ? ENEMY_ATLAS_POSE_RECTS[cell]
+          : atlas === atlases.threats
+            ? THREAT_ATLAS_POSE_RECTS[cell]
+            : undefined;
       const woundedRow = isFriendlyAtlas && row === 2;
       const kneelingRow = isFriendlyAtlas && row === 1;
       const sourceY =
@@ -2469,17 +2480,39 @@ export default function GameClient() {
       cellCanvas.height = sourceHeight;
       const cellContext = cellCanvas.getContext("2d");
       if (!cellContext) return null;
-      cellContext.drawImage(
-        atlas.image,
-        column * sourceWidth,
-        sourceY,
-        sourceWidth,
-        sourceDrawHeight,
-        0,
-        0,
-        sourceWidth,
-        sourceDrawHeight,
-      );
+      if (cleanPoseRect) {
+        const inset = 2;
+        const scale = Math.min(
+          1,
+          (sourceWidth - inset * 2) / cleanPoseRect.width,
+          (sourceHeight - inset * 2) / cleanPoseRect.height,
+        );
+        const destinationWidth = cleanPoseRect.width * scale;
+        const destinationHeight = cleanPoseRect.height * scale;
+        cellContext.drawImage(
+          atlas.image,
+          cleanPoseRect.x,
+          cleanPoseRect.y,
+          cleanPoseRect.width,
+          cleanPoseRect.height,
+          (sourceWidth - destinationWidth) / 2,
+          sourceHeight - destinationHeight - inset,
+          destinationWidth,
+          destinationHeight,
+        );
+      } else {
+        cellContext.drawImage(
+          atlas.image,
+          column * sourceWidth,
+          sourceY,
+          sourceWidth,
+          sourceDrawHeight,
+          0,
+          0,
+          sourceWidth,
+          sourceDrawHeight,
+        );
+      }
       const texture = new THREE.CanvasTexture(cellCanvas);
       const pixels = cellContext.getImageData(
         0,
@@ -6256,9 +6289,7 @@ export default function GameClient() {
                     : 11
                   : 0;
         const baseCell = !defender.alive
-          ? crushed
-            ? 6 + (defender.id % 2)
-            : 4 + (defender.id % 2)
+          ? enemyCorpseCell(defender.id, crushed)
           : defender.kind === "machine-gun"
             ? 8 + (defender.flash > 0 ? 1 : 0)
             : heavy
