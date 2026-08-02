@@ -38,6 +38,7 @@ Accepted: Repository truth records the v85 battlefield as accepted and frozen. T
 - Public and forkable.
 - Accessibility and humane settings are part of the game contract; full nonvisual playability is not claimed without its own acceptance pass.
 - “Barbered wire” is protected vocabulary where the project uses it.
+- Difficulty is a genotype, not a ladder. The accepted v1.1 doctrine uses named threat × custody phenotypes, preserves accessibility as score-neutral, forbids HP-inflation difficulty, and remains outside v1.0.0-rc1.
 
 ## Working Set
 
@@ -48,10 +49,11 @@ Accepted: Repository truth records the v85 battlefield as accepted and frozen. T
 - Drive Game: https://docs.google.com/document/d/1MPJ-jXtxDPM_1clRl9LKAkK1KesUKnBK1O-eFBH3xyg/edit
 - Drive Shared: https://docs.google.com/document/d/1oZzYjvGLUKZePbtZ0qJr3TugyoRVSMsVNcGw3PYtsQ0/edit
 - Important established Drive source: GAME BIBLE — Through the Slit — Endless Breach and Consolidation, `1VGLFYGPNUClylzgMCyGEYrJoSNECg17ep_R82uQi4io`.
+- Accepted v1.1 doctrine: [DIFFICULTY GENOTYPES — Through the Slit — The War Chooses What Thrives](https://docs.google.com/document/d/1NSnTizgTHW4fHr-mAFBP-YuXfwPr51mHPZp4Umq_gRU/edit).
 
 ## Active Gate
 
-Exact source-to-Sites deployment identity and current human/device acceptance remain unverified in this bootstrap. A public URL alone does not close the release gate.
+Exact source-to-Sites deployment identity and current human/device acceptance remain unverified in this bootstrap. A public URL alone does not close the release gate. Difficulty Genotypes is accepted design only; implementation and runtime acceptance remain future v1.1 work.
 
 ## Next Authorized Action
 
@@ -79,4 +81,5 @@ The lyric draft's continuation after “If one hull dies,” is not recovered in
 
 ## Recent Delta
 
+- 2026-08-02: Accepted and saved `Difficulty Genotypes — The War Chooses What Thrives` for the v1.1 foster-care lane; linked it from the Game control hub; made no RC implementation change.
 - 2026-08-02: Bootstrapped repository-root state plus compact Drive Writing, Game, and Shared control records. Preserved the recovered lyric portion without inventing its continuation.
