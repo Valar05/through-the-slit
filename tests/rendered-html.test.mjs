@@ -154,7 +154,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(gameSource, /THE BATTLEFIELD HOLDS ITS BREATH/);
   assert.match(gameSource, /if \(!pausedRef\.current\) update\(runtime, dt\)/);
   assert.match(gameSource, /document\.hidden\) muteForLostFocus\(\)/);
-  assert.match(gameSource, /getOstPlayer\(\)\.setEnabled\(false\)/);
+  assert.match(gameSource, /getOstPlayer\(\)\.surrenderAudioFocus\(\)/);
   assert.match(gameSource, /through-the-slit\.humane-settings\.v1/);
   assert.match(gameSource, /Pause when interrupted/);
   assert.match(gameSource, /Wide tread touch zones/);
@@ -194,6 +194,9 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(musicSource, /full-bag-no-immediate-repeat/);
   assert.match(musicSource, /session-persistent-across-runs-and-scenes/);
   assert.match(musicSource, /let sessionPlayer: OstPlayer \| null = null/);
+  assert.match(musicSource, /surrenderAudioFocus\(\)/);
+  assert.match(musicSource, /deck\.removeAttribute\("src"\)/);
+  assert.match(musicSource, /reclaimAudioFocus\(\)/);
   assert.equal((musicSource.match(/\/ost\/[a-z-]+\.mp3/g) ?? []).length, 7);
   assert.doesNotMatch(gameSource, /apAmmo|STOMACH EMPTY|HOLD GROUND FOR SUPPLY/);
   assert.match(gameSource, /const heInterval = heShotInterval\(1\)/);
@@ -489,6 +492,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
     new URL("../app/sound-engine.ts", import.meta.url),
     "utf8",
   );
+  assert.match(soundSource, /context\.suspend\(\)/);
   assert.match(soundSource, /Hybrid recorded\/designed Foley/i);
   assert.match(soundSource, /organic-concussion-a\.ogg/);
   assert.match(soundSource, /artillery-organic-a\.ogg/);
