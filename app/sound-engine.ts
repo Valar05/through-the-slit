@@ -119,6 +119,7 @@ export class SoundEngine {
   private samples = new Map<SampleKey, AudioBuffer>();
   private sampleLoad: Promise<void> | null = null;
   private sampleSequence = 0;
+  private resumeAfterFocus = false;
 
   playSapperRescue(
     stage: "brace" | "contact" | "strain" | "success" | "overload" | "severed" | "casualty",
@@ -192,18 +193,37 @@ export class SoundEngine {
   }
 
   async surrenderAudioFocus() {
-    if (!this.context || this.context.state === "closed") return;
-    if (this.context.state === "running") {
-      await this.context.suspend().catch(() => undefined);
-    }
+    const context = this.context;
+    if (!context || context.state === "closed") return;
+
+    // Suspending Web Audio silences it but may leave Chrome holding Android's
+    // native audio focus. Close the context and discard every context-owned
+    // node/buffer so headset media buttons can return to the previous player.
+    this.resumeAfterFocus = this.started;
+    this.started = false;
+    this.context = null;
+    this.master = null;
+    this.effects = null;
+    this.bed = null;
+    this.compressor = null;
+    this.leftTreadGain = null;
+    this.rightTreadGain = null;
+    this.strainGain = null;
+    this.noiseBuffers.clear();
+    this.samples.clear();
+    this.sampleLoad = null;
+    await context.close().catch(() => undefined);
   }
 
   async reclaimAudioFocus(enabled: boolean) {
     this.enabled = enabled;
-    if (!this.context || this.context.state === "closed") return;
-    if (this.context.state === "suspended") {
-      await this.context.resume().catch(() => undefined);
-    }
+    if (!this.resumeAfterFocus) return;
+    this.resumeAfterFocus = false;
+    this.buildGraph();
+    if (!this.context) return;
+    await this.preloadSamples();
+    this.started = true;
+    this.startInteriorBed();
     this.setEnabled(enabled);
   }
 
