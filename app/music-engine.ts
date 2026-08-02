@@ -117,7 +117,22 @@ export class OstPlayer {
       deck.load();
     });
     try {
-      if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "none";
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.playbackState = "none";
+        navigator.mediaSession.metadata = null;
+        for (const action of [
+          "play",
+          "pause",
+          "stop",
+          "seekbackward",
+          "seekforward",
+          "seekto",
+          "previoustrack",
+          "nexttrack",
+        ] as MediaSessionAction[]) {
+          navigator.mediaSession.setActionHandler(action, null);
+        }
+      }
     } catch {}
   }
 
