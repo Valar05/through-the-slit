@@ -115,6 +115,15 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
     new URL("../app/globals.css", import.meta.url),
     "utf8",
   );
+  const heroImage = await readFile(
+    new URL("../public/mendels-procession-hero.webp", import.meta.url),
+  );
+  assert.equal(heroImage.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.ok(heroImage.byteLength < 120_000, "main-menu hero exceeded its mobile asset budget");
+  assert.match(gameSource, /mendels-procession-hero\.webp/);
+  assert.match(gameSource, /MENDEL&apos;S PROCESSION/);
+  assert.match(gameSource, /TANK KATA MADE ANATOMY/);
+  assert.match(gameSource, /root-feet gripping crater mud/);
   const skyboxTexture = await readFile(
     new URL(
       "../public/textures/western-front-skybox-v59.webp",
