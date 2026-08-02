@@ -157,6 +157,26 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(gameSource, /getOstPlayer\(\)\.surrenderAudioFocus\(\)/);
   assert.match(gameSource, /window\.addEventListener\("pagehide", onPageHide\)/);
   assert.match(gameSource, /through-the-slit\.humane-settings\.v1/);
+  assert.match(gameSource, /through-the-slit\.intro-v4\.choice/);
+  assert.match(gameSource, /VIEW 29-SECOND INTRO &amp; CONTENT WARNINGS/);
+  assert.match(gameSource, /IntroExperience/);
+  const introSource = await readFile(
+    new URL("../app/intro-experience.tsx", import.meta.url),
+    "utf8",
+  );
+  const introContent = await readFile(
+    new URL("../app/intro-content.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(introSource, /PLAY SAFER PRESENTATION/);
+  assert.match(introSource, /PLAY FULL-MOTION CINEMATIC/);
+  assert.match(introSource, /REFUSE INTRO · CONTINUE TO MENU/);
+  assert.match(introSource, /SKIP INTRO/);
+  assert.match(introSource, /kind="captions"/);
+  assert.match(introContent, /INTRO_SOURCE_START_SECONDS = 62/);
+  assert.match(introContent, /INTRO_SOURCE_END_SECONDS = 90\.92/);
+  assert.match(introContent, /We drive the war through the slit\./);
+  assert.match(introSource, /\/ 0:29/);
   assert.match(gameSource, /Pause when interrupted/);
   assert.match(gameSource, /Wide tread touch zones/);
   assert.match(gameSource, /PRESENT THE OBSERVATION TO MENDEL/);
