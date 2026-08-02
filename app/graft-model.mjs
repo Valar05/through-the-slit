@@ -79,6 +79,17 @@ export function scarLarderRepair(level, missingArmor) {
   return Math.min(missingArmor, 2.5 + level * 1.5);
 }
 
+/**
+ * Securing ground gives the crew one short consolidation window. It closes a
+ * useful fraction of every existing wound without replacing Scar Larder's
+ * repeatable, kill-fed combat repair.
+ */
+export function fieldConsolidationRepair(current, maximum) {
+  const missing = Math.max(0, maximum - current);
+  if (missing <= 0) return 0;
+  return Math.min(missing, 4 + missing * 0.12);
+}
+
 /** Shelter preserves artillery timing and spectacle while reducing casualties. */
 export function commonShelterCasualtyMultiplier(level, connected) {
   if (level <= 0 || !connected) return 1;
