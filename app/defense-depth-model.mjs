@@ -167,11 +167,16 @@ export function terrainDecorationVisual(kind) {
 /**
  * A full-screen organ choice cannot steal the perceptual beat of its earning
  * kill or an incoming artillery warning.
- * @param {{captionClock:number, artillery:{stage:string}|null, explosions:Array<{kind:string,intensity:number,age:number,life:number}>}} runtime
+ * The first three choices are the opening barrage. Once earned, they cut
+ * through caption and explosion congestion so a violent start cannot defer
+ * the player's entire build until after death. Incoming artillery still owns
+ * the screen because pausing during its warning would be actively dishonest.
+ * @param {{captionClock:number, nutrientLevel?:number, artillery:{stage:string}|null, explosions:Array<{kind:string,intensity:number,age:number,life:number}>}} runtime
  */
 export function canPresentGraftOffer(runtime) {
+  if (runtime.artillery?.stage === "incoming") return false;
+  if ((runtime.nutrientLevel ?? Number.POSITIVE_INFINITY) < 3) return true;
   return runtime.captionClock <= 0 &&
-    runtime.artillery?.stage !== "incoming" &&
     !runtime.explosions.some((blast) =>
       blast.kind !== "toxic" &&
       blast.intensity >= 2.4 &&
