@@ -89,6 +89,7 @@ const {
 const {
   arsenalVolleyProfile,
   commonShelterCasualtyMultiplier,
+  fieldConsolidationRepair,
   graftIsEligible,
   scarLarderRepair,
   toxicCloudDamage,
@@ -123,6 +124,12 @@ const GraftCatalog = lazy(() => import("./graft-catalog"));
 const CanonizationPlate = lazy(() => import("./canonization-plate"));
 
 const TAU = Math.PI * 2;
+// The authored friendly sheet's wounded row deliberately reaches 64 pixels
+// upward into the nominal middle-row gutter. Equal 4x3 slicing cut the heads
+// off wounded bodies and pasted those pixels onto the kneeling poses above.
+// Keep the source art intact and move the extraction seam into the real
+// transparent gap between those two pose families.
+const FRIENDLY_ATLAS_VERTICAL_OVERLAP = 64;
 const FIELD_HALF_WIDTH = 430;
 const START_Z = 90;
 const FIRST_SECTOR_Z = 250;
@@ -2448,6 +2455,15 @@ export default function GameClient() {
       const sourceHeight = atlas.image.naturalHeight / 3;
       const row = Math.floor(cell / 4);
       const column = cell % 4;
+      const isFriendlyAtlas = atlas === atlases.friendly;
+      const woundedRow = isFriendlyAtlas && row === 2;
+      const kneelingRow = isFriendlyAtlas && row === 1;
+      const sourceY =
+        row * sourceHeight -
+        (woundedRow ? FRIENDLY_ATLAS_VERTICAL_OVERLAP : 0);
+      const sourceDrawHeight =
+        sourceHeight -
+        (kneelingRow ? FRIENDLY_ATLAS_VERTICAL_OVERLAP : 0);
       const cellCanvas = document.createElement("canvas");
       cellCanvas.width = sourceWidth;
       cellCanvas.height = sourceHeight;
@@ -2456,13 +2472,13 @@ export default function GameClient() {
       cellContext.drawImage(
         atlas.image,
         column * sourceWidth,
-        row * sourceHeight,
+        sourceY,
         sourceWidth,
-        sourceHeight,
+        sourceDrawHeight,
         0,
         0,
         sourceWidth,
-        sourceHeight,
+        sourceDrawHeight,
       );
       const texture = new THREE.CanvasTexture(cellCanvas);
       const pixels = cellContext.getImageData(
@@ -5261,16 +5277,24 @@ export default function GameClient() {
         formation.capturedGround = runtime.director.capturedAcres;
         formation.cohesion = clamp(formation.cohesion + 4, 0, 100);
         formation.suppression = clamp(formation.suppression - 8, 0, 100);
-        tank.core = Math.min(100, tank.core + 5);
-        tank.leftTread = Math.min(100, tank.leftTread + 4);
-        tank.rightTread = Math.min(100, tank.rightTread + 4);
-        tank.armor.front = Math.min(
-          100,
-          tank.armor.front + 5,
-        );
+        tank.core += fieldConsolidationRepair(tank.core, 100);
+        tank.leftTread += fieldConsolidationRepair(tank.leftTread, 100);
+        tank.rightTread += fieldConsolidationRepair(tank.rightTread, 100);
+        const armorMaximums: Record<ArmorFace, number> = {
+          front: 100,
+          left: 72,
+          right: 72,
+          rear: 44,
+        };
+        for (const face of Object.keys(armorMaximums) as ArmorFace[]) {
+          tank.armor[face] += fieldConsolidationRepair(
+            tank.armor[face],
+            armorMaximums[face],
+          );
+        }
         setCaption(
           runtime,
-          `GROUND ${formation.capturedGround} TAKEN — FIVE POINTS OF TISSUE, THEN FORWARD`,
+          `GROUND ${formation.capturedGround} TAKEN — FIELD CONSOLIDATION CLOSES THE WORST WOUNDS`,
           4,
         );
         soundEngineRef.current?.playCapture();
@@ -7103,12 +7127,12 @@ export default function GameClient() {
           <p>The organs fire for themselves. Turn the whole body until a threat enters the slit.</p>
         </article>
         <article>
-          <strong>TANK KATA</strong>
-          <p>Institutional law: Never receive force you can redirect. Never redirect force you can evade. Never evade away from the objective.</p>
-        </article>
-        <article>
           <strong>WAR PARTY</strong>
           <p>Ram open roads, stay close enough to reconnect, and capture ground together.</p>
+        </article>
+        <article>
+          <strong>TANK KATA</strong>
+          <p>Institutional law: Never receive force you can redirect. Never redirect force you can evade. Never evade away from the objective.</p>
         </article>
       </div>
       <button type="button" className="menu-back" onClick={() => setMenuPanel("main")}>BACK</button>
