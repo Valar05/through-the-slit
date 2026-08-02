@@ -46,7 +46,7 @@ Ship and preserve a public, forkable first-person Great War landship game viewed
 
 ## Active gate
 
-GitHub publication is complete: every corrected source file and the cinematic survived repository readback. Butler linkage remains blocked by packaging: the Sites build is server-rendered and does not emit the standalone `index.html` package itch.io requires. Do not call itch.io linked until a standalone static build or an explicitly approved launcher exists, the API key is stored as `BUTLER_API_KEY` outside source, and a pushed channel is verified on the game page.
+GitHub now contains a genuine standalone itch build and a manual Butler workflow. GitHub run `30767662743` proved the secret is present, rebuilt and validated the 77-file/80.5 MB HTML5 package, and reached itch.io. The only active blocker is the absent itch project slug: Butler returned `invalid game` for `valarsbeard/through-the-slit:html5`. Create that project as Draft, rerun `Deploy itch.io HTML5 build`, then verify the uploaded channel and playable page before calling itch linked.
 
 ## Working set
 
