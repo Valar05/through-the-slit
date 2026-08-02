@@ -155,6 +155,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(gameSource, /if \(!pausedRef\.current\) update\(runtime, dt\)/);
   assert.match(gameSource, /document\.hidden\) muteForLostFocus\(\)/);
   assert.match(gameSource, /getOstPlayer\(\)\.surrenderAudioFocus\(\)/);
+  assert.match(gameSource, /window\.addEventListener\("pagehide", onPageHide\)/);
   assert.match(gameSource, /through-the-slit\.humane-settings\.v1/);
   assert.match(gameSource, /Pause when interrupted/);
   assert.match(gameSource, /Wide tread touch zones/);
@@ -196,7 +197,16 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(musicSource, /let sessionPlayer: OstPlayer \| null = null/);
   assert.match(musicSource, /surrenderAudioFocus\(\)/);
   assert.match(musicSource, /deck\.removeAttribute\("src"\)/);
+  assert.match(musicSource, /navigator\.mediaSession\.metadata = null/);
+  assert.match(musicSource, /setActionHandler\(action, null\)/);
   assert.match(musicSource, /reclaimAudioFocus\(\)/);
+  const audioFocusSoundSource = await readFile(
+    new URL("../app/sound-engine.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(audioFocusSoundSource, /await context\.close\(\)/);
+  assert.match(audioFocusSoundSource, /this\.noiseBuffers\.clear\(\)/);
+  assert.match(audioFocusSoundSource, /this\.startInteriorBed\(\)/);
   assert.equal((musicSource.match(/\/ost\/[a-z-]+\.mp3/g) ?? []).length, 7);
   assert.doesNotMatch(gameSource, /apAmmo|STOMACH EMPTY|HOLD GROUND FOR SUPPLY/);
   assert.match(gameSource, /const heInterval = heShotInterval\(1\)/);
@@ -492,7 +502,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
     new URL("../app/sound-engine.ts", import.meta.url),
     "utf8",
   );
-  assert.match(soundSource, /context\.suspend\(\)/);
+  assert.match(soundSource, /await context\.close\(\)/);
   assert.match(soundSource, /Hybrid recorded\/designed Foley/i);
   assert.match(soundSource, /organic-concussion-a\.ogg/);
   assert.match(soundSource, /artillery-organic-a\.ogg/);
