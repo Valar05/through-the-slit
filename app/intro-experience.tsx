@@ -128,7 +128,7 @@ export default function IntroExperience({
       <section className="intro-stage">
         <video
           ref={videoRef}
-          src="/cinematics/through-the-slit-intro-v4.mp4"
+          src="./cinematics/through-the-slit-intro-v4.mp4"
           poster="/mendels-procession-hero.webp"
           playsInline
           preload="metadata"
@@ -158,7 +158,7 @@ export default function IntroExperience({
         >
           <track
             kind="captions"
-            src="/captions/through-the-slit-intro-v4.en.vtt"
+            src="./captions/through-the-slit-intro-v4.en.vtt"
             srcLang="en"
             label="English"
           />
