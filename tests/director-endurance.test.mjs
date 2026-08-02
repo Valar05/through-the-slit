@@ -71,6 +71,7 @@ import {
 import {
   arsenalVolleyProfile,
   commonShelterCasualtyMultiplier,
+  fieldConsolidationRepair,
   graftIsEligible,
   scarLarderRepair,
   toxicCloudDamage,
@@ -345,7 +346,7 @@ test("every seeded AP gun owns a real approach lane before battle starts", () =>
 test("nutrient grafts keep survivor momentum without menu spam", () => {
   assert.deepEqual(
     Array.from({ length: 12 }, (_, level) => nutrientTargetForLevel(level)),
-    [18, 29, 42, 56, 70, 84, 100, 115, 131, 147, 163, 180],
+    [4, 7, 11, 18, 28, 40, 54, 69, 84, 99, 115, 130],
   );
   assert.equal(nutrientValueForDefender("infantry"), 1.3);
   assert.equal(nutrientValueForDefender("observer"), 2.6);
@@ -355,20 +356,20 @@ test("nutrient grafts keep survivor momentum without menu spam", () => {
   assert.equal(nutrientValueForDefender("infantry", 6), 1.3);
   assert.equal(nutrientValueForDefender("carrier", 6), 3.9000000000000004);
 
-  assert.ok(nutrientTargetForLevel(0) >= 18);
-  assert.ok(nutrientTargetForLevel(8) / nutrientValueForDefender("carrier", 6) >= 30);
+  assert.ok(nutrientTargetForLevel(0) > nutrientValueForDefender("carrier", 6));
+  assert.ok(nutrientTargetForLevel(8) / nutrientValueForDefender("carrier", 6) >= 20);
 
-  const first = spendNutrientLevel(20, 0);
-  assert.deepEqual(first, { nutrientXp: 2, nutrientLevel: 1, spent: 18 });
+  const first = spendNutrientLevel(8, 0);
+  assert.deepEqual(first, { nutrientXp: 4, nutrientLevel: 1, spent: 4 });
   assert.equal(spendNutrientLevel(first.nutrientXp, first.nutrientLevel), null);
 
-  const trenchful = awardNutrients(16, 0, 40);
-  assert.equal(trenchful, 18, "multi-kill banked a hidden second menu");
+  const trenchful = awardNutrients(4, 0, 40);
+  assert.equal(trenchful, 4, "multi-kill banked a hidden second menu");
   const spentTrenchful = spendNutrientLevel(trenchful, 0);
   assert.deepEqual(spentTrenchful, {
     nutrientXp: 0,
     nutrientLevel: 1,
-    spent: 18,
+    spent: 4,
   });
   assert.equal(
     spendNutrientLevel(spentTrenchful.nutrientXp, spentTrenchful.nutrientLevel),
@@ -459,6 +460,9 @@ test("ram grafts create committed contact and a sideways force path", () => {
   assert.equal(scarLarderRepair(0, 40), 0);
   assert.equal(scarLarderRepair(1, 40), 4);
   assert.equal(scarLarderRepair(1, 2), 2);
+  assert.equal(fieldConsolidationRepair(100, 100), 0);
+  assert.equal(fieldConsolidationRepair(50, 100), 10);
+  assert.equal(fieldConsolidationRepair(42, 44), 2);
   assert.equal(commonShelterCasualtyMultiplier(0, true), 1);
   assert.equal(commonShelterCasualtyMultiplier(1, false), 1);
   assert.equal(commonShelterCasualtyMultiplier(1, true), 0.72);
