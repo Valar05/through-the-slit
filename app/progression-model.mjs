@@ -6,13 +6,20 @@
  * That makes a second menu impossible unless the player earns another entire
  * level after returning to battle.
  *
- * Opening per-level targets: 18, 29, 42, 56, 70, 84, 100...
+ * The first three organs arrive as an opening barrage: the player should have
+ * a build taking shape before attrition can end an otherwise ordinary run.
+ * After that, the cadence settles into the longer survivor curve.
+ *
+ * Opening per-level targets: 4, 7, 11, 18, 28, 40, 54...
  *
  * @param {number} completedLevels
  */
 export function nutrientTargetForLevel(completedLevels) {
   const level = Math.max(0, Math.floor(completedLevels));
-  return 18 + level * 9 + Math.floor(Math.pow(level, 1.35) * 2.5);
+  const openingBarrage = [4, 7, 11, 18, 28, 40];
+  if (level < openingBarrage.length) return openingBarrage[level];
+  const survivorLevel = level - openingBarrage.length;
+  return 54 + survivorLevel * 14 + Math.floor(Math.pow(survivorLevel, 1.2));
 }
 
 /**
