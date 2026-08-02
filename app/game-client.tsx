@@ -1899,14 +1899,15 @@ export default function GameClient() {
     const muteForLostFocus = () => {
       if (audioFocusMutedRef.current) return;
       audioFocusMutedRef.current = true;
-      soundEngineRef.current?.setEnabled(false);
-      getOstPlayer().setEnabled(false);
+      void soundEngineRef.current?.surrenderAudioFocus();
+      getOstPlayer().surrenderAudioFocus();
     };
     const restoreFocusedAudio = () => {
       if (!audioFocusMutedRef.current || document.hidden) return;
       audioFocusMutedRef.current = false;
-      soundEngineRef.current?.setEnabled(soundEnabledRef.current);
+      void soundEngineRef.current?.reclaimAudioFocus(soundEnabledRef.current);
       getOstPlayer().setEnabled(musicEnabledRef.current);
+      void getOstPlayer().reclaimAudioFocus();
     };
     const onGlobalKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" && event.key.toLowerCase() !== "p") return;
