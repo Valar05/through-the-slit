@@ -1,7 +1,19 @@
 # Through the Slit — itch.io and Butler release packet
 
-Status: investigated, not linked or deployed
+Status: standalone build ready; Butler blocked only by missing itch project
 Updated: 2026-08-02
+
+## Current release truth
+
+- GitHub secret `BUTLER_API_KEY` is present and reached the workflow without
+  exposure.
+- The dedicated static build succeeds in GitHub Actions: 77 files, 80,477,422
+  extracted bytes, root `index.html`, relative asset paths, and the authorized
+  cinematic SHA-256.
+- Workflow run `30767662743` reached itch.io and stopped at
+  `invalid game` for `valarsbeard/through-the-slit:html5`.
+- No itch upload exists yet. Create the draft project with URL
+  `through-the-slit`, then rerun `Deploy itch.io HTML5 build`.
 
 ## Finding
 
@@ -11,11 +23,11 @@ Cloudflare Worker and its browser asset directory has no standalone
 `index.html`. itch.io requires an HTML upload with an `index.html` entry
 point.
 
-The preferred release is a dedicated static itch build that preserves the game,
+The implemented release is a dedicated static itch build that preserves the game,
 29-second humane intro, local preferences, media, and accessibility controls
-without depending on the Sites runtime. A thin itch page that embeds the live
-Sites URL is possible, but it is not approved and would make itch.io a launcher
-rather than an independent build.
+without depending on the Sites runtime. It builds from `itch/index.html` through
+`vite.itch.config.ts` into `dist-itch` and is validated before Butler runs. A
+thin itch page that embeds the live Sites URL remains unapproved.
 
 ## Butler contract
 
