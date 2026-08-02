@@ -75,6 +75,7 @@ import {
   recordMartyrsWinchForeignExpression,
   selectMartyrsWinchForeignExpression,
 } from "./inheritance-model.mjs";
+import IntroExperience, { type IntroMode } from "./intro-experience";
 
 // Keep the rendering engine in its own browser chunk, but let the game module
 // own and await that dependency. The former cross-script global/event handshake
@@ -160,6 +161,7 @@ const SKYBOX_URL = "/textures/western-front-skybox-v59.webp";
 type Screen = "menu" | "playing" | "graft" | "dead";
 type MenuPanel = "main" | "settings" | "controls";
 type SettingsOrigin = "menu" | "pause";
+type IntroStage = "checking" | "hidden" | "consent" | "playing";
 type GameSettings = {
   reducedMotion: boolean;
   reducedFlashes: boolean;
@@ -171,6 +173,7 @@ type GameSettings = {
 };
 
 const SETTINGS_KEY = "through-the-slit.humane-settings.v1";
+const INTRO_CHOICE_KEY = "through-the-slit.intro-v4.choice";
 const DEFAULT_SETTINGS: GameSettings = {
   reducedMotion: false,
   reducedFlashes: false,
@@ -1593,6 +1596,8 @@ export default function GameClient() {
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [introStage, setIntroStage] = useState<IntroStage>("checking");
+  const [introMode, setIntroMode] = useState<IntroMode>("safe");
   const [judgmentCandidate, setJudgmentCandidate] = useState<ReturnType<
     typeof loadObservedLineage
   >>(null);
@@ -1623,6 +1628,41 @@ export default function GameClient() {
     if (!settingsLoaded) return;
     window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }, [settings, settingsLoaded]);
+
+  useEffect(() => {
+    if (!settingsLoaded || introStage !== "checking") return;
+    let hasChoice = false;
+    try {
+      hasChoice = window.localStorage.getItem(INTRO_CHOICE_KEY) !== null;
+    } catch {}
+    setIntroMode("safe");
+    setIntroStage(hasChoice ? "hidden" : "consent");
+  }, [introStage, settings.reducedFlashes, settings.reducedMotion, settingsLoaded]);
+
+  const rememberIntroChoice = useCallback((choice: string) => {
+    try {
+      window.localStorage.setItem(
+        INTRO_CHOICE_KEY,
+        JSON.stringify({ version: 4, choice, chosenAt: new Date().toISOString() }),
+      );
+    } catch {}
+  }, []);
+
+  const chooseIntroMode = useCallback((mode: IntroMode) => {
+    rememberIntroChoice(mode);
+    setIntroMode(mode);
+    setIntroStage("playing");
+  }, [rememberIntroChoice]);
+
+  const refuseIntro = useCallback(() => {
+    rememberIntroChoice("refused");
+    setIntroStage("hidden");
+  }, [rememberIntroChoice]);
+
+  const finishIntro = useCallback(() => {
+    rememberIntroChoice("completed-or-skipped");
+    setIntroStage("hidden");
+  }, [rememberIntroChoice]);
 
   useEffect(() => {
     pausedRef.current = paused;
@@ -7174,6 +7214,26 @@ export default function GameClient() {
     </section>
   );
 
+  if (introStage === "checking") {
+    return (
+      <main className="intro-loading" aria-live="polite">
+        <span>OPENING THE OBSERVATION PORT…</span>
+      </main>
+    );
+  }
+
+  if (introStage === "consent" || introStage === "playing") {
+    return (
+      <IntroExperience
+        stage={introStage}
+        mode={introMode}
+        onChooseMode={chooseIntroMode}
+        onRefuse={refuseIntro}
+        onFinish={finishIntro}
+      />
+    );
+  }
+
   return (
     <main
       className={`game-shell game-${screen}${paused ? " is-paused" : ""}${settings.reducedMotion ? " humane-reduced-motion" : ""}${settings.highContrast ? " humane-high-contrast" : ""}${settings.largeHud ? " humane-large-hud" : ""}`}
@@ -7437,6 +7497,15 @@ export default function GameClient() {
                   ) : null}
                   <button type="button" onClick={() => openSettings("menu")}>HUMANE SETTINGS</button>
                   <button type="button" onClick={() => setMenuPanel("controls")}>HOW TO DRIVE</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIntroMode("safe");
+                      setIntroStage("consent");
+                    }}
+                  >
+                    VIEW 29-SECOND INTRO &amp; CONTENT WARNINGS
+                  </button>
                 </nav>
                 {engineState === "failed" ? (
                   <strong className="engine-start-failure" role="alert">
