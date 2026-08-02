@@ -20,6 +20,23 @@ test("organ choices wait for their earning spectacle and artillery warning", () 
   assert.equal(canPresentGraftOffer(runtime), true);
 });
 
+test("the first three grafts hammer through opening spectacle but not artillery", () => {
+  const runtime = {
+    captionClock: 4,
+    nutrientLevel: 0,
+    artillery: null,
+    explosions: [{ kind: "he", intensity: 3, age: 0.1, life: 1 }],
+  };
+  assert.equal(canPresentGraftOffer(runtime), true);
+  runtime.nutrientLevel = 2;
+  assert.equal(canPresentGraftOffer(runtime), true);
+  runtime.nutrientLevel = 3;
+  assert.equal(canPresentGraftOffer(runtime), false);
+  runtime.artillery = { stage: "incoming" };
+  runtime.nutrientLevel = 0;
+  assert.equal(canPresentGraftOffer(runtime), false);
+});
+
 test("blast spectacle leaves a tactical perimeter on short landscape screens", () => {
   assert.equal(tacticalExplosionRadiusCap(1000, 400, "he"), 88);
   assert.equal(tacticalExplosionRadiusCap(1000, 400, "artillery"), 108);
