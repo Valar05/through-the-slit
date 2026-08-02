@@ -1941,14 +1941,17 @@ export default function GameClient() {
       }
     };
     const onFocus = () => restoreFocusedAudio();
+    const onPageHide = () => muteForLostFocus();
     window.addEventListener("keydown", onGlobalKeyDown);
     window.addEventListener("blur", onBlur);
     window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", onPageHide);
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.removeEventListener("keydown", onGlobalKeyDown);
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pagehide", onPageHide);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [pauseGame, resumeGame, screen]);
