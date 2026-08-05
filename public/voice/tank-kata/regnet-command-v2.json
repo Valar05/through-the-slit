@@ -1,0 +1,52 @@
+{
+  "status": "candidate",
+  "speaker": "Regnet",
+  "commissionName": "Rene",
+  "role": "command",
+  "provider": "Cartesia",
+  "model": "sonic-3.5",
+  "voiceId": "5c3c89e5-535f-43ef-b14d-f8ffe148c1f0",
+  "sampleRate": 48000,
+  "channels": 1,
+  "pcm": "s16le",
+  "transform": "native",
+  "acceptance": "Drew's audible verdict pending",
+  "cues": {
+    "force-enters.wav": {
+      "driveFileId": "1mT2Mlcnufct2v31qnFIoCLln4voVqPGj",
+      "bytes": 153678,
+      "sha256": "f956042dcaa44ec685966782ad2cb70ab940ff509377a2d144088388b721c480",
+      "durationSeconds": 1.6
+    },
+    "turn-it.wav": {
+      "driveFileId": "1ELLI8qw_PqadQY8vOvgAOxiIlp2cuM3D",
+      "bytes": 92238,
+      "sha256": "2db6b67e0363ab20bab92a75e40ee4fb42917d0a62f9bed52bce9f6c06ee9f7f",
+      "durationSeconds": 0.96
+    },
+    "body-pays.wav": {
+      "driveFileId": "1g_42IojQ8gDPJug44jpK3b-k35SaLfGW",
+      "bytes": 368718,
+      "sha256": "2a9c1095a3548795f7067f7d07223df2ffda69b67a5dd1d8ffbdda9ee039c9ec",
+      "durationSeconds": 3.84
+    },
+    "never-evade.wav": {
+      "driveFileId": "1eEZtubKPsA-EQeav9dMauOmG3gWuyyBm",
+      "bytes": 261198,
+      "sha256": "16f976bdccd45e6e4db792846bdee237f8e2039037ce3fa7c6f128f2cade39bc",
+      "durationSeconds": 2.72
+    },
+    "spear-outrun.wav": {
+      "driveFileId": "1J1c26j9N_sLmvNRm_g4f5dFBsTVVyQF6",
+      "bytes": 291918,
+      "sha256": "b841c0de3bc25c9dd8e9946d2d1d445198450e479b8ca6c86109c84e5fe57f86",
+      "durationSeconds": 3.04
+    },
+    "take-the-acre.wav": {
+      "driveFileId": "12JG3pVhtPL8YL7VodgP3vu0sNuTEpGv1",
+      "bytes": 145998,
+      "sha256": "c8cb3b301b44226e11391ca209b389cd9ab9774ad62e5b3cd0dbb4fed7ed7273",
+      "durationSeconds": 1.52
+    }
+  }
+}
