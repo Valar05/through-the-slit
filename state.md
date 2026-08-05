@@ -72,3 +72,16 @@ GitHub now contains a genuine standalone itch build and a manual Butler workflow
 - The combined Renee, Ferravine, Regnet, and Tank Kata lineage passes the production build, all 66 automated tests, deterministic combat simulations, and lint with zero errors. Browser preview verified the care scene, independent audio controls, first paired exchange, responsive caption spacing, and no application console errors.
 - Renee's rendered voice identity is unresolved: the requested provider voice ID was catalogued as Lila while every synthesis receipt reported Katie. These files and all three hums remain unheard and unaccepted in this runtime. Drew's casting and listening verdict is required before merge or deployment.
 - Production Sites version 100 remains unchanged. The candidate is code-complete on the draft review branch only.
+
+## Completion reconciliation — 2026-08-05
+
+- PR #1, `audio: let Renee answer Ferravine's body`, is merged into GitHub `main`. Earlier prose describing it as a draft branch is retained as lineage and no longer describes repository state.
+- GitHub `main` at `f6fd3e867469ff8d3cb61c107299a3c9b4a0b3b6` contains the complete nine-action Renee/Ferravine tending slice and the combined Tank Kata / Regnet production lineage.
+- Adam rebuilt the exact merged tree and reran all 66 automated tests plus the deterministic combat simulations successfully on 2026-08-05.
+- Sites version 101 is saved from the byte-equivalent Sites source tree at commit `7f1668beace426ca3d5aca5b2ed4b00b80833249`. Production remains version 100 until the public deployment gate is explicitly cleared.
+- Renee's temporary voice remains a human casting gate. The requested provider ID is catalogued as Lila while synthesis receipts report Katie. The files are technically verified, but Drew has not supplied an auditory acceptance verdict.
+- The protected tokens `adanks` and `jmodel` remain unresolved. They do not silently rename a mechanic, model, artifact, or canon concept.
+
+### Remaining completion gate
+
+Drew listens to the bounded Renee audition set, accepts or rejects the voice identity, and explicitly authorizes publication to the already-public Through the Slit site. Until both decisions exist, Adam may prepare and verify the release but may not represent Renee's casting as accepted or deploy version 101 publicly.
