@@ -131,7 +131,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
     ),
   );
   assert.equal(skyboxTexture.subarray(0, 4).toString("ascii"), "RIFF");
-  assert.match(gameSource, /const SKYBOX_URL = "\/textures\/western-front-skybox-v59\.webp"/);
+  assert.match(gameSource, /const SKYBOX_URL = "\.\/textures\/western-front-skybox-v59\.webp"/);
   assert.match(gameSource, /THREE\.EquirectangularReflectionMapping/);
   assert.match(gameSource, /terrainScene\.background = texture/);
   assert.match(gameSource, /terrainCanvas\.dataset\.skybox = "equirectangular-ready"/);
