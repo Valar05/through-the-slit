@@ -58,7 +58,8 @@ import {
 } from "./terrain-model.mjs";
 import { SoundEngine } from "./sound-engine";
 import { getOstPlayer, OST_POLICY } from "./music-engine";
-import { ReneeDirector, RENEE_POLICY } from "./renee-director.mjs";
+import { ReneeDirector, RENEE_CUES, RENEE_POLICY } from "./renee-director.mjs";
+import { CARE_AUDIO_POLICY, CARE_SEQUENCE, FERRAVINE_CARE_CUES, RENEE_HUM_LOOPS } from "./care-audio.mjs";
 import MendelJudgment, {
   loadLineageInState,
   loadObservedLineage,
@@ -159,7 +160,7 @@ const EFFECT_PIXEL_GRID = 2;
 const TERRAIN_CHUNK_BUILD_BUDGET = 2;
 const TERRAIN_CAMERA_NEAR = 0.35;
 const SKYBOX_URL = "./textures/western-front-skybox-v59.webp";
-type Screen = "menu" | "playing" | "graft" | "dead";
+type Screen = "menu" | "care" | "playing" | "graft" | "dead";
 type MenuPanel = "main" | "settings" | "controls";
 type SettingsOrigin = "menu" | "pause";
 type IntroStage = "checking" | "hidden" | "consent" | "playing";
@@ -1584,6 +1585,7 @@ export default function GameClient() {
   const soundEnabledRef = useRef(true);
   const musicEnabledRef = useRef(true);
   const audioFocusMutedRef = useRef(false);
+  const careAdvanceTimerRef = useRef(0);
   const pointers = useRef<
     Record<"left" | "right", { id: number; originY: number } | null>
   >({ left: null, right: null });
@@ -1606,6 +1608,12 @@ export default function GameClient() {
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [careStepIndex, setCareStepIndex] = useState(0);
+  const [careBusy, setCareBusy] = useState(false);
+  const [careCompleted, setCareCompleted] = useState(false);
+  const [careReneeCaption, setCareReneeCaption] = useState("");
+  const [careBodyCaption, setCareBodyCaption] = useState("");
+  const [careHumCaption, setCareHumCaption] = useState("");
   const [introStage, setIntroStage] = useState<IntroStage>("checking");
   const [introMode, setIntroMode] = useState<IntroMode>("safe");
   const [judgmentCandidate, setJudgmentCandidate] = useState<ReturnType<
@@ -1842,7 +1850,77 @@ export default function GameClient() {
     [publishHud],
   );
 
+  const leaveCare = useCallback(() => {
+    window.clearTimeout(careAdvanceTimerRef.current);
+    soundEngineRef.current?.stopReneeHum();
+    getOstPlayer().setCareLayer(false);
+    setCareBusy(false);
+    setCareCompleted(false);
+    setCareReneeCaption("");
+    setCareBodyCaption("");
+    setCareHumCaption("");
+    setMenuPanel("main");
+    setScreen("menu");
+  }, []);
+
+  const performCareAction = useCallback(() => {
+    if (careBusy || careCompleted) return;
+    const step = CARE_SEQUENCE[careStepIndex];
+    if (!step) return;
+    const sound = soundEngineRef.current;
+    const cue = step.reneeCue ? RENEE_CUES[step.reneeCue] : null;
+    setCareBusy(true);
+    setCareReneeCaption(cue?.text ?? "");
+    setCareBodyCaption(
+      step.bodyCues.map((id: keyof typeof FERRAVINE_CARE_CUES) => FERRAVINE_CARE_CUES[id].caption).join(" "),
+    );
+    setCareHumCaption(RENEE_HUM_LOOPS[step.hum].caption);
+    sound?.playReneeCareFoley(step.careFoley);
+    sound?.playReneeHum(step.hum);
+    step.bodyCues.forEach((id: keyof typeof FERRAVINE_CARE_CUES, index: number) => {
+      window.setTimeout(() => sound?.playFerravineCareCue(id), index * 320);
+    });
+    if (cue && settings.reneeVoice) {
+      sound?.playReneeCue(cue.id);
+      getOstPlayer().duckFor(cue.duration + 0.35);
+    }
+    const holdSeconds = Math.max(1.4, cue?.duration ?? 0.8);
+    window.clearTimeout(careAdvanceTimerRef.current);
+    careAdvanceTimerRef.current = window.setTimeout(() => {
+      if (careStepIndex >= CARE_SEQUENCE.length - 1) {
+        setCareCompleted(true);
+        setCareBusy(false);
+        return;
+      }
+      setCareStepIndex((index) => index + 1);
+      setCareBusy(false);
+    }, holdSeconds * 1000);
+  }, [careBusy, careCompleted, careStepIndex, settings.reneeVoice]);
+
+  const beginCare = useCallback(async () => {
+    setEngineState("building");
+    const music = getOstPlayer();
+    music.setEnabled(musicEnabled);
+    music.setCareLayer(true);
+    const sound = soundEngineRef.current ?? new SoundEngine();
+    soundEngineRef.current = sound;
+    sound.setEnabled(soundEnabled);
+    sound.setReneeEnabled(settings.reneeVoice);
+    await Promise.all([music.start(), sound.start()]);
+    setCareStepIndex(0);
+    setCareBusy(false);
+    setCareCompleted(false);
+    setCareReneeCaption("");
+    setCareBodyCaption("");
+    setCareHumCaption("");
+    setPaused(false);
+    setScreen("care");
+    setEngineState("ready");
+  }, [musicEnabled, settings.reneeVoice, soundEnabled]);
+
   const startGame = useCallback(() => {
+    getOstPlayer().setCareLayer(false);
+    soundEngineRef.current?.stopReneeHum();
     const music = getOstPlayer();
     music.setEnabled(musicEnabled);
     void music.start();
@@ -1948,6 +2026,8 @@ export default function GameClient() {
   }, []);
 
   const returnToMainMenu = useCallback(() => {
+    getOstPlayer().setCareLayer(false);
+    soundEngineRef.current?.stopReneeHum();
     clearLiveInput();
     setPaused(true);
     setMenuPanel("main");
@@ -7311,7 +7391,7 @@ export default function GameClient() {
         ref={canvasRef}
         className="game-canvas sprite-canvas"
         aria-label="First-person battlefield through the landship vision slit"
-        aria-hidden={screen === "menu" || paused}
+        aria-hidden={screen === "menu" || screen === "care" || paused}
         tabIndex={screen === "playing" && !paused ? 0 : -1}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
@@ -7326,6 +7406,8 @@ export default function GameClient() {
         data-renee-cues={RENEE_POLICY.cueCount}
         data-renee-trigger-model={RENEE_POLICY.triggerModel}
         data-renee-casting={RENEE_POLICY.castingStatus}
+        data-ferravine-care-cues={CARE_AUDIO_POLICY.bodyCueCount}
+        data-renee-humming-loops={CARE_AUDIO_POLICY.hummingLoopCount}
       />
       <div className="sound-controls" role="group" aria-label="Audio controls">
         {screen === "playing" && !paused ? (
@@ -7378,7 +7460,7 @@ export default function GameClient() {
         </section>
       )}
 
-      {screen !== "menu" ? (
+      {screen !== "menu" && screen !== "care" ? (
         <section className="combat-hud" aria-live="polite" aria-hidden={paused}>
           <div className="hud-block">
             <span>LIVING CORE</span>
@@ -7404,7 +7486,7 @@ export default function GameClient() {
         </section>
       ) : null}
 
-      {screen !== "menu" && (
+      {screen !== "menu" && screen !== "care" && (
         <>
           <div className="armor-readout" aria-label="Directional armor condition">
             <span>SCUTES</span>
@@ -7527,6 +7609,46 @@ export default function GameClient() {
         </>
       )}
 
+      {screen === "care" && (
+        <section className="care-screen" aria-labelledby="care-title">
+          <div className="care-port" data-care-step={CARE_SEQUENCE[careStepIndex].id} aria-hidden="true">
+            <span className="care-intake">
+              <i style={{ width: `${CARE_SEQUENCE[careStepIndex].fuel}%` }} />
+            </span>
+            <span className="care-hand left" />
+            <span className="care-hand right" />
+          </div>
+          <div className="care-panel">
+            <p className="eyebrow">PARKED // INTAKE AND SCUTE CARE</p>
+            <h2 id="care-title">{careCompleted ? "FED, SEALED, AND ANSWERING" : CARE_SEQUENCE[careStepIndex].title}</h2>
+            <p>{careCompleted ? "Renee's hands are clear. Ferravine is ready for the road." : CARE_SEQUENCE[careStepIndex].instruction}</p>
+            <div className="care-fuel-meter" aria-label={`Fuel ${CARE_SEQUENCE[careStepIndex].fuel} percent`}>
+              <span>FUEL CARE</span>
+              <i><b style={{ width: `${CARE_SEQUENCE[careStepIndex].fuel}%` }} /></i>
+              <strong>{CARE_SEQUENCE[careStepIndex].fuel}%</strong>
+            </div>
+            <div className="care-captions">
+              <p aria-live="assertive"><strong>RENEE</strong>{careReneeCaption || "Renee waits with her hands visible."}</p>
+              <p aria-live="polite"><strong>FERRAVINE</strong>{careBodyCaption || "Ferravine holds the intake closed and listens."}</p>
+              {careHumCaption ? <small>♪ {careHumCaption}</small> : null}
+            </div>
+            <nav className="care-actions" aria-label="Ferravine care actions">
+              {careCompleted ? (
+                <button type="button" onClick={leaveCare}>RETURN TO THE ROAD</button>
+              ) : (
+                <button type="button" onClick={performCareAction} disabled={careBusy}>
+                  {careBusy ? "LISTENING…" : CARE_SEQUENCE[careStepIndex].action}
+                </button>
+              )}
+              <button type="button" onClick={leaveCare}>BACK TO MAIN MENU</button>
+            </nav>
+            <small>
+              29 RENEE CUES · 12 FERRAVINE RESPONSES · 3 QUARANTINED HUM LOOPS · TWO-TAP MOTIF
+            </small>
+          </div>
+        </section>
+      )}
+
       {screen === "menu" && (
         <section className="briefing">
           {menuPanel === "settings" ? settingsPanel : menuPanel === "controls" ? controlsPanel : (
@@ -7552,6 +7674,9 @@ export default function GameClient() {
                   keep the war party connected, and feed a cumulative body from captured ground.
                 </p>
                 <nav className="menu-actions" aria-label="Main menu">
+                  <button type="button" onClick={() => void beginCare()} disabled={engineState === "building"}>
+                    {engineState === "building" ? "PREPARING THE INTAKE…" : "TEND FERRAVINE"}
+                  </button>
                   <button
                     onClick={resumeFromMainMenu}
                     disabled={engineState === "building"}
