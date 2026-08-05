@@ -45,7 +45,10 @@ export default function IntroExperience({
   }, [stage]);
 
   useEffect(() => {
-    setActionNotes(mode === "safe");
+    const syncActionNotes = window.setTimeout(() => {
+      setActionNotes(mode === "safe");
+    }, 0);
+    return () => window.clearTimeout(syncActionNotes);
   }, [mode]);
 
   useEffect(() => {
