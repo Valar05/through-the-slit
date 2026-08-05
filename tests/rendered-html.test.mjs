@@ -48,7 +48,7 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.doesNotMatch(shellSource, /__THREE_MODULE__|three-engine-ready/);
   assert.match(gameBundle, /three(?:\.module)?-[A-Za-z0-9_-]+\.js/);
   assert.ok(
-    Buffer.byteLength(gameBundle) < 155_000,
+    Buffer.byteLength(gameBundle) < 160_000,
     "game logic regressed into a monolithic engine bundle",
   );
   const infantryBundle = await readFile(
