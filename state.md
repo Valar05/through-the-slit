@@ -91,3 +91,17 @@ Drew listens to the bounded Renee audition set, accepts or rejects the voice ide
 Drew replied “accepteed” after the bounded Renee audition. Adam interprets the clear ordinary typo as “accepted.” Renee's rendered voice identity is now accepted by Drew for the merged tending and gameplay system. The Lila/Katie provider-name mismatch remains preserved as provenance; it no longer blocks casting.
 
 Capability transition: voice candidate → human-accepted casting. This acceptance does not itself deploy Sites version 101 or authorize publication to the already-public production surface.
+
+## Public production deployment — Sites version 102 — 2026-08-05
+
+Drew replied “publish public,ly.” Adam interprets the clear ordinary comma typo as “publish publicly,” explicitly clearing the existing public-site deployment gate.
+
+Delivered production:
+- URL: https://through-the-slit.dclarke1005.chatgpt.site
+- Sites version: 102
+- Saved source commit: `d7fd0c5afa26600e434add3257906d6c7f78ef56`
+- Deployment status: succeeded
+- Access mode: public
+- Live HTTP readback: 200 at the canonical URL with the Through the Slit title present
+
+Version 102 contains Drew-accepted Renee casting, the merged nine-action Renee/Ferravine tending slice, the combined Tank Kata / Regnet lineage, humane independent audio controls, semantic captions, and the previously verified 66-test release gate. Publication proves delivery of the saved build; Drew retains final perceptual authority over live play.
