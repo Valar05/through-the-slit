@@ -1,3 +1,5 @@
+import { RENEE_CUES } from "./renee-director.mjs";
+
 type FireKind =
   | "he"
   | "ap"
@@ -111,13 +113,19 @@ const clamp = (value: number, low: number, high: number) =>
 export class SoundEngine {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
+  // Named buses keep Ferravine's body, Renee, and urgent cues independently governable.
   private effects: GainNode | null = null;
   private bed: GainNode | null = null;
+  private voice: GainNode | null = null;
+  private critical: GainNode | null = null;
   private compressor: DynamicsCompressorNode | null = null;
   private enabled = true;
+  private reneeEnabled = true;
   private noiseBuffers = new Map<string, AudioBuffer>();
   private samples = new Map<SampleKey, AudioBuffer>();
+  private reneeSamples = new Map<string, AudioBuffer>();
   private sampleLoad: Promise<void> | null = null;
+  private pendingReneeCue: string | null = null;
   private sampleSequence = 0;
   private resumeAfterFocus = false;
 
@@ -165,14 +173,53 @@ export class SoundEngine {
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
-    if (this.master && this.context) {
-      this.master.gain.cancelScheduledValues(this.context.currentTime);
-      this.master.gain.setTargetAtTime(enabled ? 0.72 : 0, this.context.currentTime, 0.025);
-    }
+    if (!this.context) return;
+    const now = this.context.currentTime;
+    this.effects?.gain.setTargetAtTime(enabled ? 0.9 : 0, now, 0.025);
+    this.bed?.gain.setTargetAtTime(enabled ? 0.56 : 0, now, 0.025);
   }
 
   isEnabled() {
     return this.enabled;
+  }
+
+  setReneeEnabled(enabled: boolean) {
+    this.reneeEnabled = enabled;
+    if (!this.context) return;
+    const now = this.context.currentTime;
+    this.voice?.gain.setTargetAtTime(enabled ? 0.9 : 0, now, 0.025);
+    this.critical?.gain.setTargetAtTime(enabled ? 1 : 0, now, 0.018);
+  }
+
+  isReneeEnabled() {
+    return this.reneeEnabled;
+  }
+
+  playReneeCue(id: string) {
+    if (!this.context || !this.reneeEnabled) return false;
+    const cue = RENEE_CUES[id];
+    if (!cue) return false;
+    const buffer = this.reneeSamples.get(id);
+    if (!buffer) {
+      this.pendingReneeCue = id;
+      void this.preloadSamples().then(() => {
+        if (this.pendingReneeCue !== id) return;
+        this.pendingReneeCue = null;
+        this.playReneeCue(id);
+      });
+      return false;
+    }
+    const bus = cue.priority >= 90 ? this.critical : this.voice;
+    if (!bus) return false;
+    const now = this.context.currentTime;
+    const source = this.context.createBufferSource();
+    const gain = this.context.createGain();
+    source.buffer = buffer;
+    gain.gain.setValueAtTime(cue.priority >= 90 ? 0.98 : 0.88, now);
+    source.connect(gain);
+    gain.connect(bus);
+    source.start(now);
+    return true;
   }
 
   async start() {
@@ -205,13 +252,17 @@ export class SoundEngine {
     this.master = null;
     this.effects = null;
     this.bed = null;
+    this.voice = null;
+    this.critical = null;
     this.compressor = null;
     this.leftTreadGain = null;
     this.rightTreadGain = null;
     this.strainGain = null;
     this.noiseBuffers.clear();
     this.samples.clear();
+    this.reneeSamples.clear();
     this.sampleLoad = null;
+    this.pendingReneeCue = null;
     await context.close().catch(() => undefined);
   }
 
@@ -225,6 +276,7 @@ export class SoundEngine {
     this.started = true;
     this.startInteriorBed();
     this.setEnabled(enabled);
+    this.setReneeEnabled(this.reneeEnabled);
   }
 
   private buildGraph() {
@@ -237,10 +289,14 @@ export class SoundEngine {
     const master = context.createGain();
     const effects = context.createGain();
     const bed = context.createGain();
+    const voice = context.createGain();
+    const critical = context.createGain();
     const compressor = context.createDynamicsCompressor();
-    master.gain.value = this.enabled ? 0.72 : 0;
-    effects.gain.value = 0.9;
-    bed.gain.value = 0.56;
+    master.gain.value = 0.72;
+    effects.gain.value = this.enabled ? 0.9 : 0;
+    bed.gain.value = this.enabled ? 0.56 : 0;
+    voice.gain.value = this.reneeEnabled ? 0.9 : 0;
+    critical.gain.value = this.reneeEnabled ? 1 : 0;
     compressor.threshold.value = -16;
     compressor.knee.value = 15;
     compressor.ratio.value = 5;
@@ -248,12 +304,16 @@ export class SoundEngine {
     compressor.release.value = 0.18;
     effects.connect(compressor);
     bed.connect(compressor);
+    voice.connect(compressor);
+    critical.connect(compressor);
     compressor.connect(master);
     master.connect(context.destination);
     this.context = context;
     this.master = master;
     this.effects = effects;
     this.bed = bed;
+    this.voice = voice;
+    this.critical = critical;
     this.compressor = compressor;
   }
 
@@ -261,8 +321,8 @@ export class SoundEngine {
     if (!this.context) return Promise.resolve();
     if (this.sampleLoad) return this.sampleLoad;
     const context = this.context;
-    this.sampleLoad = Promise.all(
-      (Object.entries(SAMPLE_PATHS) as [SampleKey, string][]).map(async ([key, path]) => {
+    const bodyLoads = (Object.entries(SAMPLE_PATHS) as [SampleKey, string][]).map(
+      async ([key, path]) => {
         try {
           const response = await fetch(path);
           if (!response.ok) return;
@@ -273,8 +333,20 @@ export class SoundEngine {
           // The procedural layer remains a complete fallback when an asset is
           // unavailable or a browser rejects its codec.
         }
-      }),
-    ).then(() => undefined);
+      },
+    );
+    const voiceLoads = Object.values(RENEE_CUES).map(async (cue) => {
+      try {
+        const response = await fetch(cue.path);
+        if (!response.ok) return;
+        const encoded = await response.arrayBuffer();
+        const decoded = await context.decodeAudioData(encoded);
+        this.reneeSamples.set(cue.id, decoded);
+      } catch {
+        // Captions still carry the authored cue when a voice asset is unavailable.
+      }
+    });
+    this.sampleLoad = Promise.all([...bodyLoads, ...voiceLoads]).then(() => undefined);
     return this.sampleLoad;
   }
 
