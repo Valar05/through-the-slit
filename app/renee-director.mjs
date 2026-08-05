@@ -193,6 +193,46 @@ export const RENEE_CUES = Object.freeze({
     duration: 4.08,
     priority: 45,
     cooldown: 30,
+  }),
+  "care-intake": Object.freeze({
+    id: "care-intake",
+    text: "Easy, Vine. Renee's got it.",
+    path: "./voice/renee/renee-care-intake-candidate-v1.wav",
+    duration: 2.88,
+    priority: 60,
+    cooldown: 4,
+  }),
+  "care-fuel": Object.freeze({
+    id: "care-fuel",
+    text: "Slow mouthfuls. Taste it first.",
+    path: "./voice/renee/renee-care-fuel-candidate-v1.wav",
+    duration: 2.72,
+    priority: 54,
+    cooldown: 4,
+  }),
+  "care-contamination": Object.freeze({
+    id: "care-contamination",
+    text: "No. Spit that filth out.",
+    path: "./voice/renee/renee-care-contamination-candidate-v1.wav",
+    duration: 2.32,
+    priority: 76,
+    cooldown: 4,
+  }),
+  "care-full": Object.freeze({
+    id: "care-full",
+    text: "There. Fed, sealed, and beautiful.",
+    path: "./voice/renee/renee-care-full-candidate-v1.wav",
+    duration: 3.36,
+    priority: 55,
+    cooldown: 4,
+  }),
+  "care-damage": Object.freeze({
+    id: "care-damage",
+    text: "Hold still, love. This part may bite.",
+    path: "./voice/renee/renee-care-damage-candidate-v1.wav",
+    duration: 3.36,
+    priority: 68,
+    cooldown: 4,
   })
 });
 
