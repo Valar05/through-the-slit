@@ -1,12 +1,18 @@
 # Renee voice candidates
 
-Status: **temporary casting candidates; not accepted performances**.
+Status: **temporary casting candidates; unheard and unaccepted**.
 
 Renee is Ferravine's caretaker and translator. The runtime rule is simple: Renee speaks only when authored events or Ferravine's state gives her cause; Ferravine's body Foley remains independently audible. There is no random chatter timer.
 
-These 24 mono WAV files were rendered on 2026-08-05 with Cartesia `sonic-3.5`, 24 kHz PCM, and a -1 semitone presentation shift. The synthesis request used voice ID `4af7c703-f2a9-45dd-a7fd-724cf7efc371`. Catalog search labeled that ID “Lila - Meditation Guide,” but every synthesis receipt returned **“Katie - Friendly Fixer.”** The receipt identity is authoritative here. Drew must hear and accept or replace the performances before merge or deployment.
+The bank contains **29 spoken cues**, **three humming-loop candidates**, and a playable nine-action tending scene paired with **12 designed Ferravine body responses**. Care Foley includes designed breathing, sleeves/cloth, tools, seam-testing nails, and the recurring two-tap motif. The body responses reuse provenance-locked project Foley plus deterministic procedural pressure/noise; they are labeled designed, not recorded.
 
-Every meaningful line is duplicated as a semantic caption in `app/renee-director.mjs`. SHA-256 values below match the verified Drive readback receipts.
+These mono WAV files were rendered on 2026-08-05 with Cartesia `sonic-3.5`, 24 kHz PCM, and a -1 semitone presentation shift. The synthesis request used voice ID `4af7c703-f2a9-45dd-a7fd-724cf7efc371`. Catalog search labeled that ID “Lila - Meditation Guide,” but every synthesis receipt returned **“Katie - Friendly Fixer.”** The receipt identity is authoritative here.
+
+This runtime could verify bytes, decode metadata, and SHA-256 but could not accept native audio input. Adam therefore did **not** hear or artistically judge these performances. Drew must hear and accept or replace them before merge or deployment.
+
+Every meaningful line and body response is duplicated as a semantic caption. SHA-256 values below match verified Drive readback receipts.
+
+## Spoken cues
 
 | Cue | Caption | SHA-256 |
 |---|---|---|
@@ -34,3 +40,16 @@ Every meaningful line is duplicated as a semantic caption in `app/renee-director
 | `hull-death` | Ferravine is quiet. Renee is still here. | `ac0935bc80cf56aabbd5bd2e1f162d55c7a6ad46b28b2d81d8f9ee629a61f5f1` |
 | `party-death` | The spear went on without its body. | `90796d8d327e95ac27e061132a4fc770d6b619d09a1b52dfaf0cc68f2506b734` |
 | `maintenance-complete` | Two taps. Feed closed. Armor honest. Move. | `d111a81ea36b66cd9bb9837cb592fa0e620df06c64c8b321095a41a1a9590b5e` |
+| `care-intake` | Easy, Vine. Renee's got it. | `afce9395b8598d1e45986f825107932f309959fe4e0dcfd1f502ade8951d7686` |
+| `care-fuel` | Slow mouthfuls. Taste it first. | `8fed8a87e31007df940ed92db6581a80ef992993c0b6cd4d3e6836935f8ed611` |
+| `care-contamination` | No. Spit that filth out. | `907b00246ca6513b90f6d1520be4af53b17235ca7b2f508216a59354495d048a` |
+| `care-full` | There. Fed, sealed, and beautiful. | `df316d690c36526f0c31a84b67f1e193c70f57e5c2bc6a4a22322bf45b7abd99` |
+| `care-damage` | Hold still, love. This part may bite. | `e9d35b281973b3ab3f705aa1173314550399bee48fa7026c418a8cb506b846c5` |
+
+## Humming candidates
+
+| Loop | SHA-256 | Duration |
+|---|---|---|
+| `hum-calm` | `2e8003f500820e163d1e48392505f350a4675965de000ef1215ec50cbe638940` | 1.44s |
+| `hum-concerned` | `051d4e07a7155ab9a160eef604147396d36bc9f6fff3edef79c5c499f5357138` | 0.8s |
+| `hum-victorious` | `efb8618e2ca5ed4ee0c4d4975ef021a65663c7a5119a5197ac89daefbfad2dd5` | 0.72s |
