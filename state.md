@@ -105,3 +105,25 @@ Delivered production:
 - Live HTTP readback: 200 at the canonical URL with the Through the Slit title present
 
 Version 102 contains Drew-accepted Renee casting, the merged nine-action Renee/Ferravine tending slice, the combined Tank Kata / Regnet lineage, humane independent audio controls, semantic captions, and the previously verified 66-test release gate. Publication proves delivery of the saved build; Drew retains final perceptual authority over live play.
+
+## Live mix correction - Sites version 103 - 2026-08-05
+
+Drew's first live verdict was: "it s too much, they overlap and overtalk." That verdict supersedes the prior assumption that individually accepted voices implied an accepted combined mix.
+
+Root cause and repair:
+- The same run-start, penetration, formation, and capture events could summon both Renee and Regnet. Regnet now owns command beats; the duplicate Renee calls are removed.
+- Renee's fixed gap could expire before a rendered line ended. Her director now reserves the full cue duration plus 2.5 seconds of breathing room.
+- Renee and Regnet now share voice-focus arbitration. A normal Renee line yields to an active command; a critical Renee line may preempt it; neither voice may stack over the other.
+- Ferravine care previously layered voice, hum, Foley, and body response. Care now plays sequentially: voice, care Foley, body response, then optional hum.
+
+Delivered production:
+- GitHub source commit: `9853f879650053a0072cfb43ea39191c85d1d361`
+- URL: https://through-the-slit.dclarke1005.chatgpt.site
+- Sites version: 103
+- Saved Sites source commit: `d7786ca84df654581571d4cfe1445e67ba7c950c`
+- Deployment status: succeeded
+- Access mode: public
+- Live HTTP readback: 200 with the Through the Slit title present
+- Post-deploy browser readback: main menu and four independent audio controls present; no new application console errors
+
+Verification: the production build passed, all 66 automated tests passed, and the deterministic combat simulations passed. ESLint did not complete in this Windows environment and is not represented as passed for this correction. Drew's post-repair listening verdict remains the final perceptual gate.
