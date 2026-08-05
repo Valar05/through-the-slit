@@ -1,4 +1,5 @@
 import { RENEE_CUES } from "./renee-director.mjs";
+import { FERRAVINE_CARE_CUES, RENEE_HUM_LOOPS } from "./care-audio.mjs";
 
 type FireKind =
   | "he"
@@ -126,6 +127,8 @@ export class SoundEngine {
   private reneeSamples = new Map<string, AudioBuffer>();
   private sampleLoad: Promise<void> | null = null;
   private pendingReneeCue: string | null = null;
+  private humSource: AudioBufferSourceNode | null = null;
+  private currentHum: string | null = null;
   private sampleSequence = 0;
   private resumeAfterFocus = false;
 
@@ -185,6 +188,7 @@ export class SoundEngine {
 
   setReneeEnabled(enabled: boolean) {
     this.reneeEnabled = enabled;
+    if (!enabled) this.stopReneeHum();
     if (!this.context) return;
     const now = this.context.currentTime;
     this.voice?.gain.setTargetAtTime(enabled ? 0.9 : 0, now, 0.025);
@@ -220,6 +224,112 @@ export class SoundEngine {
     gain.connect(bus);
     source.start(now);
     return true;
+  }
+
+  playReneeHum(mood: keyof typeof RENEE_HUM_LOOPS) {
+    if (!this.context || !this.voice || !this.reneeEnabled) return false;
+    const loop = RENEE_HUM_LOOPS[mood];
+    const buffer = this.reneeSamples.get(loop.id);
+    if (!buffer) {
+      void this.preloadSamples().then(() => this.playReneeHum(mood));
+      return false;
+    }
+    if (this.currentHum === mood && this.humSource) return true;
+    this.stopReneeHum();
+    const source = this.context.createBufferSource();
+    const gain = this.context.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    gain.gain.value = 0.11;
+    source.connect(gain);
+    gain.connect(this.voice);
+    source.start();
+    this.humSource = source;
+    this.currentHum = mood;
+    return true;
+  }
+
+  stopReneeHum() {
+    try {
+      this.humSource?.stop();
+    } catch {}
+    this.humSource = null;
+    this.currentHum = null;
+  }
+
+  playReneeCareFoley(kind: "breath" | "cloth" | "nails" | "tools" | "two-tap") {
+    if (!this.context || !this.voice || !this.reneeEnabled) return;
+    const bus = this.voice;
+    if (kind === "breath") {
+      this.noiseBurst({ duration: 0.42, gain: 0.035, highpass: 180, lowpass: 920, color: "brown", bus });
+      return;
+    }
+    if (kind === "cloth") {
+      this.noiseBurst({ duration: 0.3, gain: 0.045, highpass: 520, lowpass: 2600, color: "grain", bus });
+      return;
+    }
+    if (kind === "nails") {
+      for (const delay of [0, 0.055, 0.13]) {
+        this.noiseBurst({ duration: 0.025, gain: 0.05, highpass: 2100, lowpass: 6800, color: "grain", delay, bus });
+      }
+      return;
+    }
+    if (kind === "tools") {
+      this.noiseBurst({ duration: 0.045, gain: 0.055, highpass: 900, lowpass: 4200, color: "grain", bus });
+      this.noiseBurst({ duration: 0.06, gain: 0.04, highpass: 650, lowpass: 3000, color: "grain", delay: 0.11, bus });
+      return;
+    }
+    for (const delay of [0, 0.18]) {
+      this.noiseBurst({ duration: 0.055, gain: 0.075, highpass: 480, lowpass: 2400, color: "grain", delay, bus });
+    }
+  }
+
+  playFerravineCareCue(id: keyof typeof FERRAVINE_CARE_CUES) {
+    if (!this.enabled) return;
+    switch (id) {
+      case "intake-unfurl":
+        this.playSample("wake-organ-a", { gain: 0.32, playbackRate: 0.76, lowpass: 1900 });
+        this.noiseBurst({ duration: 0.38, gain: 0.12, lowpass: 760, color: "brown" });
+        return;
+      case "throat-ready":
+        this.playSample("tendon-snap-a", { gain: 0.18, playbackRate: 0.72, lowpass: 1700 });
+        return;
+      case "fuel-swallow":
+        this.playSample("ground-capture-a", { gain: 0.26, playbackRate: 0.72, lowpass: 980 });
+        this.noiseBurst({ duration: 0.5, gain: 0.09, lowpass: 520, color: "brown" });
+        return;
+      case "taste-pause":
+        this.playSample("wake-organ-a", { gain: 0.15, playbackRate: 0.62, lowpass: 840 });
+        return;
+      case "contamination-clamp":
+        this.playSample("scute-impact-a", { gain: 0.34, playbackRate: 0.86, lowpass: 2300 });
+        return;
+      case "reverse-purge":
+        this.playSample("toxic-exhale-a", { gain: 0.31, playbackRate: 1.08, highpass: 220, lowpass: 3100 });
+        this.noiseBurst({ duration: 0.44, gain: 0.14, highpass: 360, lowpass: 2600, color: "grain" });
+        return;
+      case "clean-acceptance":
+        this.playSample("graft-birth-a", { gain: 0.24, playbackRate: 0.88, lowpass: 1700 });
+        return;
+      case "tank-full":
+        this.playSample("ground-capture-a", { gain: 0.3, playbackRate: 0.8, lowpass: 1100 });
+        return;
+      case "intake-seal":
+        this.playSample("wake-organ-a", { gain: 0.24, playbackRate: 0.68, lowpass: 1300 });
+        this.noiseBurst({ duration: 0.25, gain: 0.07, lowpass: 620, color: "brown" });
+        return;
+      case "wound-brace":
+        this.playSample("scute-impact-a", { gain: 0.21, playbackRate: 0.72, lowpass: 1400 });
+        return;
+      case "repair-knocks":
+        this.playSample("scute-impact-a", { gain: 0.22, playbackRate: 0.82, lowpass: 1700 });
+        window.setTimeout(() => this.playSample("scute-impact-a", { gain: 0.2, playbackRate: 0.78, lowpass: 1600 }), 180);
+        return;
+      case "relaxed-idle":
+        this.playSample("ground-capture-a", { gain: 0.22, playbackRate: 0.64, lowpass: 760 });
+        this.noiseBurst({ duration: 0.9, gain: 0.055, lowpass: 430, color: "brown" });
+        return;
+    }
   }
 
   async start() {
@@ -263,6 +373,7 @@ export class SoundEngine {
     this.reneeSamples.clear();
     this.sampleLoad = null;
     this.pendingReneeCue = null;
+    this.stopReneeHum();
     await context.close().catch(() => undefined);
   }
 
@@ -335,7 +446,10 @@ export class SoundEngine {
         }
       },
     );
-    const voiceLoads = Object.values(RENEE_CUES).map(async (cue) => {
+    const voiceLoads = [
+      ...Object.values(RENEE_CUES),
+      ...Object.values(RENEE_HUM_LOOPS),
+    ].map(async (cue) => {
       try {
         const response = await fetch(cue.path);
         if (!response.ok) return;
