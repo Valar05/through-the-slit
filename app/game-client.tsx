@@ -58,6 +58,7 @@ import {
 } from "./terrain-model.mjs";
 import { SoundEngine } from "./sound-engine";
 import { getOstPlayer, OST_POLICY } from "./music-engine";
+import { ReneeDirector, RENEE_POLICY } from "./renee-director.mjs";
 import MendelJudgment, {
   loadLineageInState,
   loadObservedLineage,
@@ -162,6 +163,7 @@ type Screen = "menu" | "playing" | "graft" | "dead";
 type MenuPanel = "main" | "settings" | "controls";
 type SettingsOrigin = "menu" | "pause";
 type IntroStage = "checking" | "hidden" | "consent" | "playing";
+type ReneeCue = { id: string; text: string; duration: number; priority: number };
 type GameSettings = {
   reducedMotion: boolean;
   reducedFlashes: boolean;
@@ -170,6 +172,7 @@ type GameSettings = {
   largeHud: boolean;
   wideTouch: boolean;
   autoPause: boolean;
+  reneeVoice: boolean;
 };
 
 const SETTINGS_KEY = "through-the-slit.humane-settings.v1";
@@ -182,6 +185,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   largeHud: false,
   wideTouch: true,
   autoPause: true,
+  reneeVoice: true,
 };
 
 const HUMANE_SETTING_OPTIONS: Array<{
@@ -223,6 +227,11 @@ const HUMANE_SETTING_OPTIONS: Array<{
     key: "autoPause",
     label: "Pause when interrupted",
     detail: "Freezes combat when the app loses focus or the screen changes.",
+  },
+  {
+    key: "reneeVoice",
+    label: "Renee voice",
+    detail: "Lets Renee answer real landship state changes. Every spoken cue is captioned.",
   },
 ];
 type MacroPhase = "breach" | "cross" | "consolidate" | "graft";
@@ -1569,6 +1578,7 @@ export default function GameClient() {
   const explosionPoolRef = useRef<Explosion[]>([]);
   const crushMarkPoolRef = useRef<CrushMark[]>([]);
   const soundEngineRef = useRef<SoundEngine | null>(null);
+  const reneeDirectorRef = useRef<ReneeDirector | null>(null);
   const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
   const pausedRef = useRef(false);
   const soundEnabledRef = useRef(true);
@@ -1681,6 +1691,11 @@ export default function GameClient() {
       getOstPlayer().setEnabled(musicEnabled);
     }
   }, [musicEnabled]);
+
+  useEffect(() => {
+    soundEngineRef.current?.setReneeEnabled(settings.reneeVoice);
+    reneeDirectorRef.current?.setEnabled(settings.reneeVoice);
+  }, [settings.reneeVoice]);
 
   const updateSetting = useCallback(
     (key: keyof GameSettings, value: boolean) => {
@@ -1814,6 +1829,19 @@ export default function GameClient() {
     });
   }, []);
 
+  const speakRenee = useCallback(
+    (cue: ReneeCue) => {
+      const runtime = runtimeRef.current;
+      if (!runtime || runtime.status === "dead" && cue.id !== "hull-death" && cue.id !== "party-death") return;
+      soundEngineRef.current?.playReneeCue(cue.id);
+      getOstPlayer().duckFor(cue.duration + 0.35);
+      runtime.caption = `RENEE — ${cue.text}`;
+      runtime.captionClock = Math.max(runtime.captionClock, cue.duration + 0.8);
+      publishHud();
+    },
+    [publishHud],
+  );
+
   const startGame = useCallback(() => {
     const music = getOstPlayer();
     music.setEnabled(musicEnabled);
@@ -1821,7 +1849,11 @@ export default function GameClient() {
     const sound = soundEngineRef.current ?? new SoundEngine();
     soundEngineRef.current = sound;
     sound.setEnabled(soundEnabled);
+    sound.setReneeEnabled(settings.reneeVoice);
     void sound.start();
+    const reneeDirector = new ReneeDirector(speakRenee);
+    reneeDirector.setEnabled(settings.reneeVoice);
+    reneeDirectorRef.current = reneeDirector;
     const old = runtimeRef.current;
     if (old) {
       projectilePoolRef.current.push(...old.projectiles.splice(0));
@@ -1864,6 +1896,7 @@ export default function GameClient() {
             runtime.heCycle = heShotInterval(1) - 1;
           }
           runtimeRef.current = runtime;
+          reneeDirector.signal("wake", runtime.elapsed, true);
           setHasActiveRun(true);
           setPaused(false);
           setMenuPanel("main");
@@ -1878,7 +1911,7 @@ export default function GameClient() {
         }
       });
     });
-  }, [coldSeed, musicEnabled, publishHud, soundEnabled]);
+  }, [coldSeed, musicEnabled, publishHud, settings.reneeVoice, soundEnabled, speakRenee]);
 
   const clearLiveInput = useCallback(() => {
     const runtime = runtimeRef.current;
@@ -2032,6 +2065,7 @@ export default function GameClient() {
         offspring: false,
       };
       soundEngineRef.current?.playGraft(runtime.grafts[graft.key], false);
+      reneeDirectorRef.current?.signal("graft-complete", runtime.elapsed);
       const spentLevel = spendNutrientLevel(
         runtime.nutrientXp,
         runtime.nutrientLevel,
@@ -2066,6 +2100,7 @@ export default function GameClient() {
           offspring: true,
         };
         soundEngineRef.current?.playGraft(runtime.grafts[graft.key], true);
+        reneeDirectorRef.current?.signal("offspring-born", runtime.elapsed, true);
       }
       runtime.status = "playing";
       setScreen("playing");
@@ -3702,6 +3737,7 @@ export default function GameClient() {
           1.8,
         );
         soundEngineRef.current?.playArmorImpact("small-arms", face);
+        reneeDirectorRef.current?.signal("small-arms", runtime.elapsed);
         return "small-arms";
       }
       const heavy =
@@ -3736,6 +3772,7 @@ export default function GameClient() {
           2.3,
         );
         soundEngineRef.current?.playArmorImpact("bounce", face);
+        reneeDirectorRef.current?.signal("armor-bounce", runtime.elapsed);
         return "bounce";
       }
 
@@ -3753,6 +3790,7 @@ export default function GameClient() {
         setCaption(runtime, "OLD FRONTAL SCAR OPENS — THE DEFENSE REMEMBERED", 4);
       }
       soundEngineRef.current?.playArmorImpact("penetration", face);
+      reneeDirectorRef.current?.signal("penetration", runtime.elapsed);
       return "penetration";
     };
 
@@ -4447,6 +4485,7 @@ export default function GameClient() {
         runtime.artilleryMissions,
         observed ? "flare" : "ranging",
       );
+      if (observed) reneeDirectorRef.current?.signal("artillery-flare", runtime.elapsed);
       if (readyObserver) {
         readyObserver.flash = 0.8;
         readyObserver.fireClock = profile.batteryPause;
@@ -4523,6 +4562,7 @@ export default function GameClient() {
         strike.rangingRoundsFired = 2;
         strike.stage = "incoming";
         soundEngineRef.current?.artilleryCue(strike.mission, "incoming");
+        reneeDirectorRef.current?.signal("artillery-incoming", runtime.elapsed);
         setCaption(runtime, "BRACKET SPLIT — FIRE FOR EFFECT, MOVE NOW", 2.2);
       }
       if (strike.warning > 0) return;
@@ -5375,6 +5415,7 @@ export default function GameClient() {
           4,
         );
         soundEngineRef.current?.playCapture();
+        reneeDirectorRef.current?.signal("capture", runtime.elapsed);
         runtime.lastGraftKills = runtime.enemyKills;
         seedDefenseHorizon(
           runtime,
@@ -5413,6 +5454,7 @@ export default function GameClient() {
           "ORGAN READY · HELD FOR A FIRING LULL",
           1.6,
         );
+        reneeDirectorRef.current?.signal("nutrient-ready", runtime.elapsed);
         return;
       }
 
@@ -5470,6 +5512,18 @@ export default function GameClient() {
         rightTread: runtime.tank.rightTread,
         suppression: runtime.formation.suppression,
       });
+      reneeDirectorRef.current?.sync(
+        {
+          forwardVelocity: runtime.tank.forwardVelocity,
+          core: runtime.tank.core,
+          front: runtime.tank.armor.front,
+          leftTread: runtime.tank.leftTread,
+          rightTread: runtime.tank.rightTread,
+          suppression: runtime.formation.suppression,
+          formationState: runtime.formation.state,
+        },
+        runtime.elapsed,
+      );
       updateCrushing(runtime);
       updateWeapons(runtime, dt);
       updateDefense(runtime, dt);
@@ -5527,6 +5581,7 @@ export default function GameClient() {
         runtime.status = "dead";
         setCaption(runtime, "LANDSHIP SILENT — THE WAR PARTY LOSES ITS SPEAR", 5);
         soundEngineRef.current?.playDeath();
+        reneeDirectorRef.current?.signal("hull-death", runtime.elapsed, true);
         setJudgmentCandidate(loadObservedLineage());
         setScreen("dead");
       } else if (
@@ -5541,6 +5596,7 @@ export default function GameClient() {
           5,
         );
         soundEngineRef.current?.playDeath();
+        reneeDirectorRef.current?.signal("party-death", runtime.elapsed, true);
         setJudgmentCandidate(loadObservedLineage());
         setScreen("dead");
       } else if (runtime.captionClock <= 0) {
@@ -7173,6 +7229,13 @@ export default function GameClient() {
         >
           OST {musicEnabled ? "ON" : "OFF"}
         </button>
+        <button
+          type="button"
+          aria-pressed={settings.reneeVoice}
+          onClick={() => updateSetting("reneeVoice", !settings.reneeVoice)}
+        >
+          RENEE {settings.reneeVoice ? "ON" : "OFF"}
+        </button>
       </div>
       <button
         type="button"
@@ -7260,6 +7323,9 @@ export default function GameClient() {
         data-ost-shuffle={OST_POLICY.shuffle}
         data-ost-crossfade={OST_POLICY.crossfadeSeconds}
         data-ost-lifecycle={OST_POLICY.lifecycle}
+        data-renee-cues={RENEE_POLICY.cueCount}
+        data-renee-trigger-model={RENEE_POLICY.triggerModel}
+        data-renee-casting={RENEE_POLICY.castingStatus}
       />
       <div className="sound-controls" role="group" aria-label="Audio controls">
         {screen === "playing" && !paused ? (
@@ -7289,6 +7355,15 @@ export default function GameClient() {
           onClick={toggleMusic}
         >
           OST {musicEnabled ? "ON" : "OFF"}
+        </button>
+        <button
+          type="button"
+          className="sound-toggle renee-toggle"
+          aria-label={settings.reneeVoice ? "Mute Renee voice" : "Enable Renee voice"}
+          aria-pressed={settings.reneeVoice}
+          onClick={() => updateSetting("reneeVoice", !settings.reneeVoice)}
+        >
+          RENEE {settings.reneeVoice ? "ON" : "OFF"}
         </button>
       </div>
 
