@@ -45,6 +45,9 @@ button {
   top: max(8px, env(safe-area-inset-top));
   right: max(9px, env(safe-area-inset-right));
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 18px);
   gap: 5px;
 }
 
@@ -1710,7 +1713,7 @@ button {
 .settings-audio {
   width: min(420px, 100%);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -2402,4 +2405,174 @@ button {
   .hud-block i b {
     transition: none;
   }
+}
+
+
+/* Parked Renee/Ferravine tending slice. The intake is a first-person instrument,
+   not a second vehicle model or a detached menu illustration. */
+.care-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 34;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+  background:
+    radial-gradient(circle at 28% 46%, rgb(105 25 20 / 36%), transparent 25%),
+    linear-gradient(112deg, #080705 0 48%, #17110d 49% 100%);
+  color: #efe0bf;
+  overflow: hidden;
+}
+
+.care-port {
+  position: relative;
+  min-height: 100%;
+  background:
+    linear-gradient(90deg, rgb(255 224 154 / 6%) 1px, transparent 1px) 0 0 / 34px 34px,
+    radial-gradient(ellipse at 48% 48%, #4a2b1d 0 8%, #16100c 9% 32%, #050504 65%);
+  border-right: 1px solid rgb(238 191 111 / 22%);
+  box-shadow: inset -42px 0 90px #000;
+}
+
+.care-port::before,
+.care-port::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 24%;
+  background:
+    linear-gradient(#281d15, #0b0907 36%, #21160f 70%, #050504),
+    repeating-linear-gradient(90deg, transparent 0 72px, rgb(231 177 91 / 10%) 73px 75px);
+  border: 1px solid #4e3424;
+  box-shadow: 0 16px 30px #000, inset 0 -10px 20px #000;
+}
+
+.care-port::before { top: 0; transform: perspective(600px) rotateX(-7deg); transform-origin: top; }
+.care-port::after { bottom: 0; transform: perspective(600px) rotateX(7deg); transform-origin: bottom; }
+
+.care-intake {
+  position: absolute;
+  left: 11%;
+  right: 11%;
+  top: 42%;
+  height: 15%;
+  overflow: hidden;
+  border: 2px solid #5e4029;
+  border-radius: 48% 52% 44% 56% / 46% 48% 52% 54%;
+  background: #020202;
+  box-shadow:
+    0 0 0 10px #17100c,
+    0 0 0 12px #38241a,
+    inset 0 0 34px #000,
+    0 0 54px rgb(123 25 19 / 28%);
+}
+
+.care-intake::after {
+  content: "";
+  position: absolute;
+  inset: 38% 3%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #35100c, #c04a28 45%, #6c1d15);
+  opacity: 0.72;
+  filter: blur(3px);
+}
+
+.care-intake > i {
+  position: absolute;
+  inset: auto auto 0 0;
+  z-index: 2;
+  height: 9px;
+  max-width: 100%;
+  background: linear-gradient(90deg, #6d2115, #e07d40);
+  box-shadow: 0 0 18px #d45b2b;
+  transition: width 700ms ease;
+}
+
+.care-hand {
+  position: absolute;
+  bottom: 8%;
+  width: 9%;
+  height: 42%;
+  border-radius: 48% 48% 18% 18%;
+  background: linear-gradient(90deg, #5c351f, #bb835a 48%, #4d2b1b);
+  box-shadow: 0 8px 34px #000;
+  transform-origin: bottom;
+}
+
+.care-hand.left { left: 28%; transform: rotate(17deg); }
+.care-hand.right { right: 28%; transform: rotate(-17deg); }
+
+.care-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 4rem);
+  background: linear-gradient(135deg, rgb(25 17 12 / 96%), rgb(7 7 6 / 99%));
+}
+
+.care-panel h2 {
+  max-width: 13ch;
+  margin: 0;
+  font-size: clamp(2rem, 4.5vw, 4.6rem);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.care-panel > p { max-width: 38rem; margin: 0; color: #cdbf9e; line-height: 1.5; }
+
+.care-fuel-meter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.care-fuel-meter i {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid #6c4b30;
+  background: #070604;
+}
+
+.care-fuel-meter b {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6f2418, #e28845);
+  transition: width 700ms ease;
+}
+
+.care-captions {
+  display: grid;
+  gap: 0.55rem;
+  min-height: 8rem;
+  padding: 1rem;
+  border: 1px solid rgb(232 188 111 / 24%);
+  background: rgb(0 0 0 / 34%);
+}
+
+.care-captions p {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.8rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.care-captions strong { color: #e4a65f; letter-spacing: 0.12em; }
+.care-captions small { color: #ad9e83; font-style: italic; }
+.care-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+.care-actions button { min-height: 3rem; }
+
+.game-care .sound-controls { z-index: 40; }
+
+@media (max-width: 760px), (max-height: 560px) {
+  .care-screen { grid-template-columns: 1fr; grid-template-rows: minmax(11rem, 42vh) 1fr; overflow: auto; }
+  .care-port { min-height: 11rem; border-right: 0; border-bottom: 1px solid rgb(238 191 111 / 22%); }
+  .care-panel { justify-content: flex-start; padding: 1rem; }
+  .care-panel h2 { font-size: clamp(1.8rem, 8vw, 3rem); }
+  .care-captions { min-height: 0; }
+  .care-captions p { grid-template-columns: 7rem minmax(0, 1fr); }
 }

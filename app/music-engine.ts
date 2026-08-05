@@ -10,6 +10,10 @@ const OST_TRACKS = [
 
 const CROSSFADE_SECONDS = 6;
 const MUSIC_VOLUME = 0.26;
+const OST_TEMPO_BPM = 92;
+const OST_PULSE_SECONDS = 60 / OST_TEMPO_BPM;
+const VOICE_DUCK_MULTIPLIER = 0.34;
+const MAX_VOICE_SYNC_DELAY_MS = 360;
 
 const randomUnit = () => {
   if (globalThis.crypto?.getRandomValues) {
@@ -36,6 +40,11 @@ export class OstPlayer {
   private crossfadeFrame = 0;
   private monitor = 0;
   private focusResumeTime = 0;
+  private duckUntil = 0;
+  private duckTimer = 0;
+  private careLayer = false;
+  private voiceDucked = false;
+  private voiceDuckTimer = 0;
 
   constructor() {
     const makeDeck = () => {
@@ -55,19 +64,63 @@ export class OstPlayer {
     });
   }
 
+  private currentLevel() {
+    const ducked = performance.now() < this.duckUntil;
+    const sceneLevel = this.careLayer ? 0.72 : 1;
+    const doctrineLevel = this.voiceDucked ? VOICE_DUCK_MULTIPLIER : 1;
+    return this.enabled
+      ? MUSIC_VOLUME * sceneLevel * doctrineLevel * (ducked ? 0.34 : 1)
+      : 0;
+  }
+
+  private applySteadyLevel() {
+    if (!this.started || this.crossfading) return;
+    this.decks[this.activeDeck].volume = this.currentLevel();
+    this.decks[1 - this.activeDeck].volume = 0;
+  }
+
+  setCareLayer(active: boolean) {
+    this.careLayer = active;
+    this.applySteadyLevel();
+  }
+
+  duckFor(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    this.duckUntil = Math.max(this.duckUntil, performance.now() + seconds * 1000);
+    window.clearTimeout(this.duckTimer);
+    this.applySteadyLevel();
+    this.duckTimer = window.setTimeout(() => this.applySteadyLevel(), seconds * 1000 + 80);
+  }
+
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
-    if (!this.started) return;
-    const active = this.decks[this.activeDeck];
-    const inactive = this.decks[1 - this.activeDeck];
-    if (!this.crossfading) {
-      active.volume = enabled ? MUSIC_VOLUME : 0;
-      inactive.volume = 0;
-    }
+    this.applySteadyLevel();
   }
 
   isEnabled() {
     return this.enabled;
+  }
+
+  /** Return a bounded wait to the next 92 BPM pulse in the live OST timeline. */
+  nextPulseDelayMs(maxDelayMs = MAX_VOICE_SYNC_DELAY_MS) {
+    if (!this.started) return 0;
+    const active = this.decks[this.activeDeck];
+    const position = Number.isFinite(active.currentTime) ? active.currentTime : 0;
+    const remainder = position % OST_PULSE_SECONDS;
+    const delayMs = (OST_PULSE_SECONDS - remainder) * 1000;
+    if (delayMs < 24 || OST_PULSE_SECONDS * 1000 - delayMs < 24) return 0;
+    return Math.min(maxDelayMs, Math.max(0, delayMs));
+  }
+
+  /** Lower the accepted masters locally while Tank Kata doctrine is speaking. */
+  duckForVoice(durationMs: number) {
+    this.voiceDucked = true;
+    window.clearTimeout(this.voiceDuckTimer);
+    this.applySteadyLevel();
+    this.voiceDuckTimer = window.setTimeout(() => {
+      this.voiceDucked = false;
+      this.applySteadyLevel();
+    }, Math.max(0, durationMs));
   }
 
   async start() {
@@ -81,7 +134,7 @@ export class OstPlayer {
     this.currentTrack = this.takeTrack();
     const active = this.decks[this.activeDeck];
     active.src = OST_TRACKS[this.currentTrack];
-    active.volume = this.enabled ? MUSIC_VOLUME : 0;
+    active.volume = this.currentLevel();
     this.primeNextDeck();
 
     // Both streaming decks are unlocked by the first gameplay gesture. The
@@ -109,6 +162,10 @@ export class OstPlayer {
       cancelAnimationFrame(this.crossfadeFrame);
       this.crossfading = false;
     }
+    window.clearTimeout(this.duckTimer);
+    this.duckUntil = 0;
+    window.clearTimeout(this.voiceDuckTimer);
+    this.voiceDucked = false;
     const active = this.decks[this.activeDeck];
     this.focusResumeTime = active.currentTime || 0;
     this.decks.forEach((deck) => {
@@ -141,7 +198,7 @@ export class OstPlayer {
     const active = this.decks[this.activeDeck];
     active.src = OST_TRACKS[this.currentTrack];
     active.currentTime = this.focusResumeTime;
-    active.volume = this.enabled ? MUSIC_VOLUME : 0;
+    active.volume = this.currentLevel();
     const inactive = this.decks[1 - this.activeDeck];
     inactive.src = OST_TRACKS[this.queuedTrack];
     inactive.currentTime = 0;
@@ -196,7 +253,7 @@ export class OstPlayer {
     const startedAt = performance.now();
     const fade = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / durationMs);
-      const level = this.enabled ? MUSIC_VOLUME : 0;
+      const level = this.currentLevel();
       outgoing.volume = level * (1 - progress);
       incoming.volume = level * progress;
       if (progress < 1) {
@@ -229,4 +286,9 @@ export const OST_POLICY = {
   shuffle: "full-bag-no-immediate-repeat",
   crossfadeSeconds: CROSSFADE_SECONDS,
   lifecycle: "session-persistent-across-runs-and-scenes",
+  tempoBpm: OST_TEMPO_BPM,
+  meter: "heavy-6/8",
+  pulseSeconds: OST_PULSE_SECONDS,
+  voiceDuckMultiplier: VOICE_DUCK_MULTIPLIER,
+  maxVoiceSyncDelayMs: MAX_VOICE_SYNC_DELAY_MS,
 } as const;

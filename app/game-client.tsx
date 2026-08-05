@@ -58,6 +58,10 @@ import {
 } from "./terrain-model.mjs";
 import { SoundEngine } from "./sound-engine";
 import { getOstPlayer, OST_POLICY } from "./music-engine";
+import { ReneeDirector, RENEE_CUES, RENEE_POLICY } from "./renee-director.mjs";
+import { CARE_AUDIO_POLICY, CARE_SEQUENCE, FERRAVINE_CARE_CUES, RENEE_HUM_LOOPS } from "./care-audio.mjs";
+import { TANK_KATA_POLICY } from "./tank-kata-policy.mjs";
+import { TankKataVoiceConductor } from "./tank-kata-voice";
 import MendelJudgment, {
   loadLineageInState,
   loadObservedLineage,
@@ -158,10 +162,11 @@ const EFFECT_PIXEL_GRID = 2;
 const TERRAIN_CHUNK_BUILD_BUDGET = 2;
 const TERRAIN_CAMERA_NEAR = 0.35;
 const SKYBOX_URL = "./textures/western-front-skybox-v59.webp";
-type Screen = "menu" | "playing" | "graft" | "dead";
+type Screen = "menu" | "care" | "playing" | "graft" | "dead";
 type MenuPanel = "main" | "settings" | "controls";
 type SettingsOrigin = "menu" | "pause";
 type IntroStage = "checking" | "hidden" | "consent" | "playing";
+type ReneeCue = { id: string; text: string; duration: number; priority: number };
 type GameSettings = {
   reducedMotion: boolean;
   reducedFlashes: boolean;
@@ -170,6 +175,7 @@ type GameSettings = {
   largeHud: boolean;
   wideTouch: boolean;
   autoPause: boolean;
+  reneeVoice: boolean;
 };
 
 const SETTINGS_KEY = "through-the-slit.humane-settings.v1";
@@ -182,6 +188,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   largeHud: false,
   wideTouch: true,
   autoPause: true,
+  reneeVoice: true,
 };
 
 const HUMANE_SETTING_OPTIONS: Array<{
@@ -223,6 +230,11 @@ const HUMANE_SETTING_OPTIONS: Array<{
     key: "autoPause",
     label: "Pause when interrupted",
     detail: "Freezes combat when the app loses focus or the screen changes.",
+  },
+  {
+    key: "reneeVoice",
+    label: "Renee voice",
+    detail: "Lets Renee answer real landship state changes. Every spoken cue is captioned.",
   },
 ];
 type MacroPhase = "breach" | "cross" | "consolidate" | "graft";
@@ -1569,11 +1581,15 @@ export default function GameClient() {
   const explosionPoolRef = useRef<Explosion[]>([]);
   const crushMarkPoolRef = useRef<CrushMark[]>([]);
   const soundEngineRef = useRef<SoundEngine | null>(null);
+  const reneeDirectorRef = useRef<ReneeDirector | null>(null);
+  const voiceEngineRef = useRef<TankKataVoiceConductor | null>(null);
   const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
   const pausedRef = useRef(false);
   const soundEnabledRef = useRef(true);
   const musicEnabledRef = useRef(true);
+  const voiceEnabledRef = useRef(true);
   const audioFocusMutedRef = useRef(false);
+  const careAdvanceTimerRef = useRef(0);
   const pointers = useRef<
     Record<"left" | "right", { id: number; originY: number } | null>
   >({ left: null, right: null });
@@ -1594,8 +1610,15 @@ export default function GameClient() {
   >("idle");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [careStepIndex, setCareStepIndex] = useState(0);
+  const [careBusy, setCareBusy] = useState(false);
+  const [careCompleted, setCareCompleted] = useState(false);
+  const [careReneeCaption, setCareReneeCaption] = useState("");
+  const [careBodyCaption, setCareBodyCaption] = useState("");
+  const [careHumCaption, setCareHumCaption] = useState("");
   const [introStage, setIntroStage] = useState<IntroStage>("checking");
   const [introMode, setIntroMode] = useState<IntroMode>("safe");
   const [judgmentCandidate, setJudgmentCandidate] = useState<ReturnType<
@@ -1635,8 +1658,11 @@ export default function GameClient() {
     try {
       hasChoice = window.localStorage.getItem(INTRO_CHOICE_KEY) !== null;
     } catch {}
-    setIntroMode("safe");
-    setIntroStage(hasChoice ? "hidden" : "consent");
+    const syncIntro = window.setTimeout(() => {
+      setIntroMode("safe");
+      setIntroStage(hasChoice ? "hidden" : "consent");
+    }, 0);
+    return () => window.clearTimeout(syncIntro);
   }, [introStage, settings.reducedFlashes, settings.reducedMotion, settingsLoaded]);
 
   const rememberIntroChoice = useCallback((choice: string) => {
@@ -1681,6 +1707,18 @@ export default function GameClient() {
       getOstPlayer().setEnabled(musicEnabled);
     }
   }, [musicEnabled]);
+
+  useEffect(() => {
+    voiceEnabledRef.current = voiceEnabled;
+    if (!audioFocusMutedRef.current) {
+      voiceEngineRef.current?.setEnabled(voiceEnabled);
+    }
+  }, [voiceEnabled]);
+
+  useEffect(() => {
+    soundEngineRef.current?.setReneeEnabled(settings.reneeVoice);
+    reneeDirectorRef.current?.setEnabled(settings.reneeVoice);
+  }, [settings.reneeVoice]);
 
   const updateSetting = useCallback(
     (key: keyof GameSettings, value: boolean) => {
@@ -1814,14 +1852,112 @@ export default function GameClient() {
     });
   }, []);
 
+  const speakRenee = useCallback(
+    (cue: ReneeCue) => {
+      const runtime = runtimeRef.current;
+      if (!runtime || runtime.status === "dead" && cue.id !== "hull-death" && cue.id !== "party-death") return;
+      soundEngineRef.current?.playReneeCue(cue.id);
+      getOstPlayer().duckFor(cue.duration + 0.35);
+      runtime.caption = `RENEE — ${cue.text}`;
+      runtime.captionClock = Math.max(runtime.captionClock, cue.duration + 0.8);
+      publishHud();
+    },
+    [publishHud],
+  );
+
+  const leaveCare = useCallback(() => {
+    window.clearTimeout(careAdvanceTimerRef.current);
+    soundEngineRef.current?.stopReneeHum();
+    getOstPlayer().setCareLayer(false);
+    setCareBusy(false);
+    setCareCompleted(false);
+    setCareReneeCaption("");
+    setCareBodyCaption("");
+    setCareHumCaption("");
+    setMenuPanel("main");
+    setScreen("menu");
+  }, []);
+
+  const performCareAction = useCallback(() => {
+    if (careBusy || careCompleted) return;
+    const step = CARE_SEQUENCE[careStepIndex];
+    if (!step) return;
+    const sound = soundEngineRef.current;
+    const cue = step.reneeCue ? RENEE_CUES[step.reneeCue] : null;
+    setCareBusy(true);
+    setCareReneeCaption(cue?.text ?? "");
+    setCareBodyCaption(
+      step.bodyCues.map((id: keyof typeof FERRAVINE_CARE_CUES) => FERRAVINE_CARE_CUES[id].caption).join(" "),
+    );
+    setCareHumCaption(RENEE_HUM_LOOPS[step.hum].caption);
+    sound?.playReneeCareFoley(step.careFoley);
+    sound?.playReneeHum(step.hum);
+    step.bodyCues.forEach((id: keyof typeof FERRAVINE_CARE_CUES, index: number) => {
+      window.setTimeout(() => sound?.playFerravineCareCue(id), index * 320);
+    });
+    if (cue && settings.reneeVoice) {
+      sound?.playReneeCue(cue.id);
+      getOstPlayer().duckFor(cue.duration + 0.35);
+    }
+    const holdSeconds = Math.max(1.4, cue?.duration ?? 0.8);
+    window.clearTimeout(careAdvanceTimerRef.current);
+    careAdvanceTimerRef.current = window.setTimeout(() => {
+      if (careStepIndex >= CARE_SEQUENCE.length - 1) {
+        setCareCompleted(true);
+        setCareBusy(false);
+        return;
+      }
+      setCareStepIndex((index) => index + 1);
+      setCareBusy(false);
+    }, holdSeconds * 1000);
+  }, [careBusy, careCompleted, careStepIndex, settings.reneeVoice]);
+
+  const beginCare = useCallback(async () => {
+    setEngineState("building");
+    const music = getOstPlayer();
+    music.setEnabled(musicEnabled);
+    music.setCareLayer(true);
+    const sound = soundEngineRef.current ?? new SoundEngine();
+    soundEngineRef.current = sound;
+    sound.setEnabled(soundEnabled);
+    sound.setReneeEnabled(settings.reneeVoice);
+    await Promise.all([music.start(), sound.start()]);
+    setCareStepIndex(0);
+    setCareBusy(false);
+    setCareCompleted(false);
+    setCareReneeCaption("");
+    setCareBodyCaption("");
+    setCareHumCaption("");
+    setPaused(false);
+    setScreen("care");
+    setEngineState("ready");
+  }, [musicEnabled, settings.reneeVoice, soundEnabled]);
+
   const startGame = useCallback(() => {
+    getOstPlayer().setCareLayer(false);
+    soundEngineRef.current?.stopReneeHum();
     const music = getOstPlayer();
     music.setEnabled(musicEnabled);
     void music.start();
     const sound = soundEngineRef.current ?? new SoundEngine();
     soundEngineRef.current = sound;
     sound.setEnabled(soundEnabled);
+    sound.setReneeEnabled(settings.reneeVoice);
     void sound.start();
+    const reneeDirector = new ReneeDirector(speakRenee);
+    reneeDirector.setEnabled(settings.reneeVoice);
+    reneeDirectorRef.current = reneeDirector;
+    const voice =
+      voiceEngineRef.current ??
+      new TankKataVoiceConductor(music, (caption, seconds) => {
+        const runtime = runtimeRef.current;
+        if (!runtime) return;
+        runtime.caption = caption;
+        runtime.captionClock = seconds;
+      });
+    voiceEngineRef.current = voice;
+    voice.setEnabled(voiceEnabled);
+    void voice.unlock();
     const old = runtimeRef.current;
     if (old) {
       projectilePoolRef.current.push(...old.projectiles.splice(0));
@@ -1864,6 +2000,9 @@ export default function GameClient() {
             runtime.heCycle = heShotInterval(1) - 1;
           }
           runtimeRef.current = runtime;
+          reneeDirector.signal("wake", runtime.elapsed, true);
+          voice.resetForRun();
+          voice.trigger("force-enters");
           setHasActiveRun(true);
           setPaused(false);
           setMenuPanel("main");
@@ -1878,7 +2017,7 @@ export default function GameClient() {
         }
       });
     });
-  }, [coldSeed, musicEnabled, publishHud, soundEnabled]);
+  }, [coldSeed, musicEnabled, publishHud, settings.reneeVoice, soundEnabled, speakRenee, voiceEnabled]);
 
   const clearLiveInput = useCallback(() => {
     const runtime = runtimeRef.current;
@@ -1915,6 +2054,8 @@ export default function GameClient() {
   }, []);
 
   const returnToMainMenu = useCallback(() => {
+    getOstPlayer().setCareLayer(false);
+    soundEngineRef.current?.stopReneeHum();
     clearLiveInput();
     setPaused(true);
     setMenuPanel("main");
@@ -1940,12 +2081,15 @@ export default function GameClient() {
       if (audioFocusMutedRef.current) return;
       audioFocusMutedRef.current = true;
       void soundEngineRef.current?.surrenderAudioFocus();
+      voiceEngineRef.current?.surrenderAudioFocus();
       getOstPlayer().surrenderAudioFocus();
     };
     const restoreFocusedAudio = () => {
       if (!audioFocusMutedRef.current || document.hidden) return;
       audioFocusMutedRef.current = false;
       void soundEngineRef.current?.reclaimAudioFocus(soundEnabledRef.current);
+      voiceEngineRef.current?.setEnabled(voiceEnabledRef.current);
+      voiceEngineRef.current?.reclaimAudioFocus();
       getOstPlayer().setEnabled(musicEnabledRef.current);
       void getOstPlayer().reclaimAudioFocus();
     };
@@ -2013,6 +2157,14 @@ export default function GameClient() {
     });
   }, []);
 
+  const toggleVoice = useCallback(() => {
+    setVoiceEnabled((current) => {
+      const next = !current;
+      voiceEngineRef.current?.setEnabled(next);
+      return next;
+    });
+  }, []);
+
   const chooseGraft = useCallback(
     (graft: GraftChoice) => {
       const runtime = runtimeRef.current;
@@ -2032,6 +2184,7 @@ export default function GameClient() {
         offspring: false,
       };
       soundEngineRef.current?.playGraft(runtime.grafts[graft.key], false);
+      reneeDirectorRef.current?.signal("graft-complete", runtime.elapsed);
       const spentLevel = spendNutrientLevel(
         runtime.nutrientXp,
         runtime.nutrientLevel,
@@ -2066,6 +2219,7 @@ export default function GameClient() {
           offspring: true,
         };
         soundEngineRef.current?.playGraft(runtime.grafts[graft.key], true);
+        reneeDirectorRef.current?.signal("offspring-born", runtime.elapsed, true);
       }
       runtime.status = "playing";
       setScreen("playing");
@@ -2654,6 +2808,7 @@ export default function GameClient() {
     };
 
     let frame = 0;
+    let redirectHeld = false;
     let previous = performance.now();
     let hudClock = 0;
 
@@ -3702,6 +3857,7 @@ export default function GameClient() {
           1.8,
         );
         soundEngineRef.current?.playArmorImpact("small-arms", face);
+        reneeDirectorRef.current?.signal("small-arms", runtime.elapsed);
         return "small-arms";
       }
       const heavy =
@@ -3736,6 +3892,7 @@ export default function GameClient() {
           2.3,
         );
         soundEngineRef.current?.playArmorImpact("bounce", face);
+        reneeDirectorRef.current?.signal("armor-bounce", runtime.elapsed);
         return "bounce";
       }
 
@@ -3753,6 +3910,8 @@ export default function GameClient() {
         setCaption(runtime, "OLD FRONTAL SCAR OPENS — THE DEFENSE REMEMBERED", 4);
       }
       soundEngineRef.current?.playArmorImpact("penetration", face);
+      reneeDirectorRef.current?.signal("penetration", runtime.elapsed);
+      voiceEngineRef.current?.trigger("body-pays");
       return "penetration";
     };
 
@@ -3764,6 +3923,15 @@ export default function GameClient() {
       if (runtime.keys.has("s")) leftDemand = -1;
       if (runtime.keys.has("arrowup")) rightDemand = 1;
       if (runtime.keys.has("arrowdown")) rightDemand = -1;
+
+      const opposedRedirect =
+        Math.abs(leftDemand) > 0.42 &&
+        Math.abs(rightDemand) > 0.42 &&
+        Math.sign(leftDemand) !== Math.sign(rightDemand);
+      if (opposedRedirect && !redirectHeld) {
+        voiceEngineRef.current?.trigger("turn-it");
+      }
+      redirectHeld = opposedRedirect;
 
       const direction =
         Math.sign(leftDemand + rightDemand) || Math.sign(tank.forwardVelocity) || 1;
@@ -4447,6 +4615,7 @@ export default function GameClient() {
         runtime.artilleryMissions,
         observed ? "flare" : "ranging",
       );
+      if (observed) reneeDirectorRef.current?.signal("artillery-flare", runtime.elapsed);
       if (readyObserver) {
         readyObserver.flash = 0.8;
         readyObserver.fireClock = profile.batteryPause;
@@ -4523,6 +4692,7 @@ export default function GameClient() {
         strike.rangingRoundsFired = 2;
         strike.stage = "incoming";
         soundEngineRef.current?.artilleryCue(strike.mission, "incoming");
+        reneeDirectorRef.current?.signal("artillery-incoming", runtime.elapsed);
         setCaption(runtime, "BRACKET SPLIT — FIRE FOR EFFECT, MOVE NOW", 2.2);
       }
       if (strike.warning > 0) return;
@@ -5002,6 +5172,7 @@ export default function GameClient() {
       }) as {x:number;z:number;target:Defender} | null;
       const formationTarget = firingSolution?.target ?? null;
       formation.routeContested = routeContested;
+      const previousFormationState = formation.state;
       formation.state = formationStateFor({
         gap,
         cohesion: formation.cohesion,
@@ -5009,6 +5180,16 @@ export default function GameClient() {
         routeContested,
         breachWake: !!activeWake,
       });
+      if (formation.state !== previousFormationState) {
+        if (formation.state === "overrun") {
+          voiceEngineRef.current?.trigger("spear-outrun");
+        } else if (
+          formation.state === "separated" &&
+          previousFormationState !== "overrun"
+        ) {
+          voiceEngineRef.current?.trigger("never-evade");
+        }
+      }
       formation.connected = formation.state === "connected";
       formation.signalPulse += dt *
         (formation.state === "connected"
@@ -5375,6 +5556,8 @@ export default function GameClient() {
           4,
         );
         soundEngineRef.current?.playCapture();
+        reneeDirectorRef.current?.signal("capture", runtime.elapsed);
+        voiceEngineRef.current?.trigger("take-the-acre");
         runtime.lastGraftKills = runtime.enemyKills;
         seedDefenseHorizon(
           runtime,
@@ -5413,6 +5596,7 @@ export default function GameClient() {
           "ORGAN READY · HELD FOR A FIRING LULL",
           1.6,
         );
+        reneeDirectorRef.current?.signal("nutrient-ready", runtime.elapsed);
         return;
       }
 
@@ -5470,6 +5654,18 @@ export default function GameClient() {
         rightTread: runtime.tank.rightTread,
         suppression: runtime.formation.suppression,
       });
+      reneeDirectorRef.current?.sync(
+        {
+          forwardVelocity: runtime.tank.forwardVelocity,
+          core: runtime.tank.core,
+          front: runtime.tank.armor.front,
+          leftTread: runtime.tank.leftTread,
+          rightTread: runtime.tank.rightTread,
+          suppression: runtime.formation.suppression,
+          formationState: runtime.formation.state,
+        },
+        runtime.elapsed,
+      );
       updateCrushing(runtime);
       updateWeapons(runtime, dt);
       updateDefense(runtime, dt);
@@ -5527,6 +5723,7 @@ export default function GameClient() {
         runtime.status = "dead";
         setCaption(runtime, "LANDSHIP SILENT — THE WAR PARTY LOSES ITS SPEAR", 5);
         soundEngineRef.current?.playDeath();
+        reneeDirectorRef.current?.signal("hull-death", runtime.elapsed, true);
         setJudgmentCandidate(loadObservedLineage());
         setScreen("dead");
       } else if (
@@ -5541,6 +5738,7 @@ export default function GameClient() {
           5,
         );
         soundEngineRef.current?.playDeath();
+        reneeDirectorRef.current?.signal("party-death", runtime.elapsed, true);
         setJudgmentCandidate(loadObservedLineage());
         setScreen("dead");
       } else if (runtime.captionClock <= 0) {
@@ -7173,6 +7371,20 @@ export default function GameClient() {
         >
           OST {musicEnabled ? "ON" : "OFF"}
         </button>
+        <button
+          type="button"
+          aria-pressed={settings.reneeVoice}
+          onClick={() => updateSetting("reneeVoice", !settings.reneeVoice)}
+        >
+          RENEE {settings.reneeVoice ? "ON" : "OFF"}
+        </button>
+        <button
+          type="button"
+          aria-pressed={voiceEnabled}
+          onClick={toggleVoice}
+        >
+          COMMAND {voiceEnabled ? "ON" : "OFF"}
+        </button>
       </div>
       <button
         type="button"
@@ -7248,7 +7460,7 @@ export default function GameClient() {
         ref={canvasRef}
         className="game-canvas sprite-canvas"
         aria-label="First-person battlefield through the landship vision slit"
-        aria-hidden={screen === "menu" || paused}
+        aria-hidden={screen === "menu" || screen === "care" || paused}
         tabIndex={screen === "playing" && !paused ? 0 : -1}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
@@ -7260,6 +7472,19 @@ export default function GameClient() {
         data-ost-shuffle={OST_POLICY.shuffle}
         data-ost-crossfade={OST_POLICY.crossfadeSeconds}
         data-ost-lifecycle={OST_POLICY.lifecycle}
+        data-renee-cues={RENEE_POLICY.cueCount}
+        data-renee-trigger-model={RENEE_POLICY.triggerModel}
+        data-renee-casting={RENEE_POLICY.castingStatus}
+        data-ferravine-care-cues={CARE_AUDIO_POLICY.bodyCueCount}
+        data-renee-humming-loops={CARE_AUDIO_POLICY.hummingLoopCount}
+        data-voice-cues={TANK_KATA_POLICY.cueCount}
+        data-voice-tempo={TANK_KATA_POLICY.tempoBpm}
+        data-voice-meter={TANK_KATA_POLICY.meter}
+        data-voice-sync-delay={TANK_KATA_POLICY.maxSyncDelayMs}
+        data-voice-speaker={TANK_KATA_POLICY.speaker}
+        data-voice-role={TANK_KATA_POLICY.voiceRole}
+        data-voice-sync={TANK_KATA_POLICY.routine}
+        data-voice-warning-policy={TANK_KATA_POLICY.warnings}
       />
       <div className="sound-controls" role="group" aria-label="Audio controls">
         {screen === "playing" && !paused ? (
@@ -7290,6 +7515,24 @@ export default function GameClient() {
         >
           OST {musicEnabled ? "ON" : "OFF"}
         </button>
+        <button
+          type="button"
+          className="sound-toggle renee-toggle"
+          aria-label={settings.reneeVoice ? "Mute Renee voice" : "Enable Renee voice"}
+          aria-pressed={settings.reneeVoice}
+          onClick={() => updateSetting("reneeVoice", !settings.reneeVoice)}
+        >
+          RENEE {settings.reneeVoice ? "ON" : "OFF"}
+        </button>
+        <button
+          type="button"
+          className="sound-toggle voice-toggle"
+          aria-label={voiceEnabled ? "Mute Regnet command voice" : "Enable Regnet command voice"}
+          aria-pressed={voiceEnabled}
+          onClick={toggleVoice}
+        >
+          COMMAND {voiceEnabled ? "ON" : "OFF"}
+        </button>
       </div>
 
       {rendererState === "failed" && (
@@ -7303,7 +7546,7 @@ export default function GameClient() {
         </section>
       )}
 
-      {screen !== "menu" ? (
+      {screen !== "menu" && screen !== "care" ? (
         <section className="combat-hud" aria-live="polite" aria-hidden={paused}>
           <div className="hud-block">
             <span>LIVING CORE</span>
@@ -7329,7 +7572,7 @@ export default function GameClient() {
         </section>
       ) : null}
 
-      {screen !== "menu" && (
+      {screen !== "menu" && screen !== "care" && (
         <>
           <div className="armor-readout" aria-label="Directional armor condition">
             <span>SCUTES</span>
@@ -7452,6 +7695,46 @@ export default function GameClient() {
         </>
       )}
 
+      {screen === "care" && (
+        <section className="care-screen" aria-labelledby="care-title">
+          <div className="care-port" data-care-step={CARE_SEQUENCE[careStepIndex].id} aria-hidden="true">
+            <span className="care-intake">
+              <i style={{ width: `${CARE_SEQUENCE[careStepIndex].fuel}%` }} />
+            </span>
+            <span className="care-hand left" />
+            <span className="care-hand right" />
+          </div>
+          <div className="care-panel">
+            <p className="eyebrow">PARKED // INTAKE AND SCUTE CARE</p>
+            <h2 id="care-title">{careCompleted ? "FED, SEALED, AND ANSWERING" : CARE_SEQUENCE[careStepIndex].title}</h2>
+            <p>{careCompleted ? "Renee's hands are clear. Ferravine is ready for the road." : CARE_SEQUENCE[careStepIndex].instruction}</p>
+            <div className="care-fuel-meter" aria-label={`Fuel ${CARE_SEQUENCE[careStepIndex].fuel} percent`}>
+              <span>FUEL CARE</span>
+              <i><b style={{ width: `${CARE_SEQUENCE[careStepIndex].fuel}%` }} /></i>
+              <strong>{CARE_SEQUENCE[careStepIndex].fuel}%</strong>
+            </div>
+            <div className="care-captions">
+              <p aria-live="assertive"><strong>RENEE</strong>{careReneeCaption || "Renee waits with her hands visible."}</p>
+              <p aria-live="polite"><strong>FERRAVINE</strong>{careBodyCaption || "Ferravine holds the intake closed and listens."}</p>
+              {careHumCaption ? <small>♪ {careHumCaption}</small> : null}
+            </div>
+            <nav className="care-actions" aria-label="Ferravine care actions">
+              {careCompleted ? (
+                <button type="button" onClick={leaveCare}>RETURN TO THE ROAD</button>
+              ) : (
+                <button type="button" onClick={performCareAction} disabled={careBusy}>
+                  {careBusy ? "LISTENING…" : CARE_SEQUENCE[careStepIndex].action}
+                </button>
+              )}
+              <button type="button" onClick={leaveCare}>BACK TO MAIN MENU</button>
+            </nav>
+            <small>
+              29 RENEE CUES · 12 FERRAVINE RESPONSES · 3 QUARANTINED HUM LOOPS · TWO-TAP MOTIF
+            </small>
+          </div>
+        </section>
+      )}
+
       {screen === "menu" && (
         <section className="briefing">
           {menuPanel === "settings" ? settingsPanel : menuPanel === "controls" ? controlsPanel : (
@@ -7477,6 +7760,9 @@ export default function GameClient() {
                   keep the war party connected, and feed a cumulative body from captured ground.
                 </p>
                 <nav className="menu-actions" aria-label="Main menu">
+                  <button type="button" onClick={() => void beginCare()} disabled={engineState === "building"}>
+                    {engineState === "building" ? "PREPARING THE INTAKE…" : "TEND FERRAVINE"}
+                  </button>
                   <button
                     onClick={resumeFromMainMenu}
                     disabled={engineState === "building"}

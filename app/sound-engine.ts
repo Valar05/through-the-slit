@@ -1,3 +1,6 @@
+import { RENEE_CUES } from "./renee-director.mjs";
+import { FERRAVINE_CARE_CUES, RENEE_HUM_LOOPS } from "./care-audio.mjs";
+
 type FireKind =
   | "he"
   | "ap"
@@ -111,13 +114,21 @@ const clamp = (value: number, low: number, high: number) =>
 export class SoundEngine {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
+  // Named buses keep Ferravine's body, Renee, and urgent cues independently governable.
   private effects: GainNode | null = null;
   private bed: GainNode | null = null;
+  private voice: GainNode | null = null;
+  private critical: GainNode | null = null;
   private compressor: DynamicsCompressorNode | null = null;
   private enabled = true;
+  private reneeEnabled = true;
   private noiseBuffers = new Map<string, AudioBuffer>();
   private samples = new Map<SampleKey, AudioBuffer>();
+  private reneeSamples = new Map<string, AudioBuffer>();
   private sampleLoad: Promise<void> | null = null;
+  private pendingReneeCue: string | null = null;
+  private humSource: AudioBufferSourceNode | null = null;
+  private currentHum: string | null = null;
   private sampleSequence = 0;
   private resumeAfterFocus = false;
 
@@ -165,14 +176,160 @@ export class SoundEngine {
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
-    if (this.master && this.context) {
-      this.master.gain.cancelScheduledValues(this.context.currentTime);
-      this.master.gain.setTargetAtTime(enabled ? 0.72 : 0, this.context.currentTime, 0.025);
-    }
+    if (!this.context) return;
+    const now = this.context.currentTime;
+    this.effects?.gain.setTargetAtTime(enabled ? 0.9 : 0, now, 0.025);
+    this.bed?.gain.setTargetAtTime(enabled ? 0.56 : 0, now, 0.025);
   }
 
   isEnabled() {
     return this.enabled;
+  }
+
+  setReneeEnabled(enabled: boolean) {
+    this.reneeEnabled = enabled;
+    if (!enabled) this.stopReneeHum();
+    if (!this.context) return;
+    const now = this.context.currentTime;
+    this.voice?.gain.setTargetAtTime(enabled ? 0.9 : 0, now, 0.025);
+    this.critical?.gain.setTargetAtTime(enabled ? 1 : 0, now, 0.018);
+  }
+
+  isReneeEnabled() {
+    return this.reneeEnabled;
+  }
+
+  playReneeCue(id: string) {
+    if (!this.context || !this.reneeEnabled) return false;
+    const cue = RENEE_CUES[id];
+    if (!cue) return false;
+    const buffer = this.reneeSamples.get(id);
+    if (!buffer) {
+      this.pendingReneeCue = id;
+      void this.preloadSamples().then(() => {
+        if (this.pendingReneeCue !== id) return;
+        this.pendingReneeCue = null;
+        this.playReneeCue(id);
+      });
+      return false;
+    }
+    const bus = cue.priority >= 90 ? this.critical : this.voice;
+    if (!bus) return false;
+    const now = this.context.currentTime;
+    const source = this.context.createBufferSource();
+    const gain = this.context.createGain();
+    source.buffer = buffer;
+    gain.gain.setValueAtTime(cue.priority >= 90 ? 0.98 : 0.88, now);
+    source.connect(gain);
+    gain.connect(bus);
+    source.start(now);
+    return true;
+  }
+
+  playReneeHum(mood: keyof typeof RENEE_HUM_LOOPS) {
+    if (!this.context || !this.voice || !this.reneeEnabled) return false;
+    const loop = RENEE_HUM_LOOPS[mood];
+    const buffer = this.reneeSamples.get(loop.id);
+    if (!buffer) {
+      void this.preloadSamples().then(() => this.playReneeHum(mood));
+      return false;
+    }
+    if (this.currentHum === mood && this.humSource) return true;
+    this.stopReneeHum();
+    const source = this.context.createBufferSource();
+    const gain = this.context.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    gain.gain.value = 0.11;
+    source.connect(gain);
+    gain.connect(this.voice);
+    source.start();
+    this.humSource = source;
+    this.currentHum = mood;
+    return true;
+  }
+
+  stopReneeHum() {
+    try {
+      this.humSource?.stop();
+    } catch {}
+    this.humSource = null;
+    this.currentHum = null;
+  }
+
+  playReneeCareFoley(kind: "breath" | "cloth" | "nails" | "tools" | "two-tap") {
+    if (!this.context || !this.voice || !this.reneeEnabled) return;
+    const bus = this.voice;
+    if (kind === "breath") {
+      this.noiseBurst({ duration: 0.42, gain: 0.035, highpass: 180, lowpass: 920, color: "brown", bus });
+      return;
+    }
+    if (kind === "cloth") {
+      this.noiseBurst({ duration: 0.3, gain: 0.045, highpass: 520, lowpass: 2600, color: "grain", bus });
+      return;
+    }
+    if (kind === "nails") {
+      for (const delay of [0, 0.055, 0.13]) {
+        this.noiseBurst({ duration: 0.025, gain: 0.05, highpass: 2100, lowpass: 6800, color: "grain", delay, bus });
+      }
+      return;
+    }
+    if (kind === "tools") {
+      this.noiseBurst({ duration: 0.045, gain: 0.055, highpass: 900, lowpass: 4200, color: "grain", bus });
+      this.noiseBurst({ duration: 0.06, gain: 0.04, highpass: 650, lowpass: 3000, color: "grain", delay: 0.11, bus });
+      return;
+    }
+    for (const delay of [0, 0.18]) {
+      this.noiseBurst({ duration: 0.055, gain: 0.075, highpass: 480, lowpass: 2400, color: "grain", delay, bus });
+    }
+  }
+
+  playFerravineCareCue(id: keyof typeof FERRAVINE_CARE_CUES) {
+    if (!this.enabled) return;
+    switch (id) {
+      case "intake-unfurl":
+        this.playSample("wake-organ-a", { gain: 0.32, playbackRate: 0.76, lowpass: 1900 });
+        this.noiseBurst({ duration: 0.38, gain: 0.12, lowpass: 760, color: "brown" });
+        return;
+      case "throat-ready":
+        this.playSample("tendon-snap-a", { gain: 0.18, playbackRate: 0.72, lowpass: 1700 });
+        return;
+      case "fuel-swallow":
+        this.playSample("ground-capture-a", { gain: 0.26, playbackRate: 0.72, lowpass: 980 });
+        this.noiseBurst({ duration: 0.5, gain: 0.09, lowpass: 520, color: "brown" });
+        return;
+      case "taste-pause":
+        this.playSample("wake-organ-a", { gain: 0.15, playbackRate: 0.62, lowpass: 840 });
+        return;
+      case "contamination-clamp":
+        this.playSample("scute-impact-a", { gain: 0.34, playbackRate: 0.86, lowpass: 2300 });
+        return;
+      case "reverse-purge":
+        this.playSample("toxic-exhale-a", { gain: 0.31, playbackRate: 1.08, highpass: 220, lowpass: 3100 });
+        this.noiseBurst({ duration: 0.44, gain: 0.14, highpass: 360, lowpass: 2600, color: "grain" });
+        return;
+      case "clean-acceptance":
+        this.playSample("graft-birth-a", { gain: 0.24, playbackRate: 0.88, lowpass: 1700 });
+        return;
+      case "tank-full":
+        this.playSample("ground-capture-a", { gain: 0.3, playbackRate: 0.8, lowpass: 1100 });
+        return;
+      case "intake-seal":
+        this.playSample("wake-organ-a", { gain: 0.24, playbackRate: 0.68, lowpass: 1300 });
+        this.noiseBurst({ duration: 0.25, gain: 0.07, lowpass: 620, color: "brown" });
+        return;
+      case "wound-brace":
+        this.playSample("scute-impact-a", { gain: 0.21, playbackRate: 0.72, lowpass: 1400 });
+        return;
+      case "repair-knocks":
+        this.playSample("scute-impact-a", { gain: 0.22, playbackRate: 0.82, lowpass: 1700 });
+        window.setTimeout(() => this.playSample("scute-impact-a", { gain: 0.2, playbackRate: 0.78, lowpass: 1600 }), 180);
+        return;
+      case "relaxed-idle":
+        this.playSample("ground-capture-a", { gain: 0.22, playbackRate: 0.64, lowpass: 760 });
+        this.noiseBurst({ duration: 0.9, gain: 0.055, lowpass: 430, color: "brown" });
+        return;
+    }
   }
 
   async start() {
@@ -205,13 +362,18 @@ export class SoundEngine {
     this.master = null;
     this.effects = null;
     this.bed = null;
+    this.voice = null;
+    this.critical = null;
     this.compressor = null;
     this.leftTreadGain = null;
     this.rightTreadGain = null;
     this.strainGain = null;
     this.noiseBuffers.clear();
     this.samples.clear();
+    this.reneeSamples.clear();
     this.sampleLoad = null;
+    this.pendingReneeCue = null;
+    this.stopReneeHum();
     await context.close().catch(() => undefined);
   }
 
@@ -225,6 +387,7 @@ export class SoundEngine {
     this.started = true;
     this.startInteriorBed();
     this.setEnabled(enabled);
+    this.setReneeEnabled(this.reneeEnabled);
   }
 
   private buildGraph() {
@@ -237,10 +400,14 @@ export class SoundEngine {
     const master = context.createGain();
     const effects = context.createGain();
     const bed = context.createGain();
+    const voice = context.createGain();
+    const critical = context.createGain();
     const compressor = context.createDynamicsCompressor();
-    master.gain.value = this.enabled ? 0.72 : 0;
-    effects.gain.value = 0.9;
-    bed.gain.value = 0.56;
+    master.gain.value = 0.72;
+    effects.gain.value = this.enabled ? 0.9 : 0;
+    bed.gain.value = this.enabled ? 0.56 : 0;
+    voice.gain.value = this.reneeEnabled ? 0.9 : 0;
+    critical.gain.value = this.reneeEnabled ? 1 : 0;
     compressor.threshold.value = -16;
     compressor.knee.value = 15;
     compressor.ratio.value = 5;
@@ -248,12 +415,16 @@ export class SoundEngine {
     compressor.release.value = 0.18;
     effects.connect(compressor);
     bed.connect(compressor);
+    voice.connect(compressor);
+    critical.connect(compressor);
     compressor.connect(master);
     master.connect(context.destination);
     this.context = context;
     this.master = master;
     this.effects = effects;
     this.bed = bed;
+    this.voice = voice;
+    this.critical = critical;
     this.compressor = compressor;
   }
 
@@ -261,8 +432,8 @@ export class SoundEngine {
     if (!this.context) return Promise.resolve();
     if (this.sampleLoad) return this.sampleLoad;
     const context = this.context;
-    this.sampleLoad = Promise.all(
-      (Object.entries(SAMPLE_PATHS) as [SampleKey, string][]).map(async ([key, path]) => {
+    const bodyLoads = (Object.entries(SAMPLE_PATHS) as [SampleKey, string][]).map(
+      async ([key, path]) => {
         try {
           const response = await fetch(path);
           if (!response.ok) return;
@@ -273,8 +444,23 @@ export class SoundEngine {
           // The procedural layer remains a complete fallback when an asset is
           // unavailable or a browser rejects its codec.
         }
-      }),
-    ).then(() => undefined);
+      },
+    );
+    const voiceLoads = [
+      ...Object.values(RENEE_CUES),
+      ...Object.values(RENEE_HUM_LOOPS),
+    ].map(async (cue) => {
+      try {
+        const response = await fetch(cue.path);
+        if (!response.ok) return;
+        const encoded = await response.arrayBuffer();
+        const decoded = await context.decodeAudioData(encoded);
+        this.reneeSamples.set(cue.id, decoded);
+      } catch {
+        // Captions still carry the authored cue when a voice asset is unavailable.
+      }
+    });
+    this.sampleLoad = Promise.all([...bodyLoads, ...voiceLoads]).then(() => undefined);
     return this.sampleLoad;
   }
 

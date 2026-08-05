@@ -21,7 +21,7 @@ Ship and preserve a public, forkable first-person Great War landship game viewed
 ## Production truth
 
 - Public game: https://through-the-slit.dclarke1005.chatgpt.site
-- Current production lineage: Sites version 96; functional intro correction commit `007514d31730acc843d111af4fce358be342aa17`, followed only by state checkpoints.
+- Current production lineage: Sites version 100 at commit `5b3dc24872ff4b42beaa1f415ba6e5ad0b7ecdc1`; this includes the accepted intro successor, Tank Kata conductor, and Regnet command-voice candidate lineage.
 - Public source: https://github.com/Valar05/through-the-slit
 - The corrected intro source is published to GitHub main through audited Home Center file mutations. The cinematic was imported by successful workflow run `30765890586` at commit `9efda721de90c9d0cefaf20c4ea8405727d47926`; its Git blob `117e75894908753dd70f776516519972ab67152f` matches the local production asset and the import was SHA-256 gated to `cabbd4a795db9b3ba44e75b222ca5d4bafccf6c70bcce32661a5c837d593607b`.
 - An itch.io release is requested but not yet implemented or deployed. `ITCH.md` records the current Butler finding and form packet.
@@ -54,3 +54,21 @@ GitHub now contains a genuine standalone itch build and a manual Butler workflow
 - Itch/Butler packet: `ITCH.md`
 - Game Bible: https://docs.google.com/document/d/1VGLFYGPNUClylzgMCyGEYrJoSNECg17ep_R82uQi4io/edit
 - Difficulty doctrine: https://docs.google.com/document/d/1NSnTizgTHW4fHr-mAFBP-YuXfwPr51mHPZp4Umq_gRU/edit
+
+## Regnet command voice — production candidate
+
+- Drew commissioned high-quality Rene voice clips and made Regnet the voice of command.
+- Source identity: Drew-accepted Regnet Cartesia voice ID `5c3c89e5-535f-43ef-b14d-f8ffe148c1f0`; `sonic-3.5`; native pitch and speed.
+- Six 48 kHz mono WAV candidates replace only the six command performances. Trigger states, words, captions, priorities, cooldowns, 92 BPM synchronization, warning immediacy, and seven accepted OST masters remain unchanged.
+- Production provenance and exact Drive identities live in `public/voice/tank-kata/regnet-command-v2.json`.
+- Candidate audio is generated, durably read back, transferred byte-exactly, and auditioned by Adam. Drew's audible verdict remains the acceptance gate.
+
+## Renee and Ferravine tending slice — review candidate
+
+- Draft PR `#1` on `agent/renee-audio-director-rc1` contains a playable nine-action parked care scene: approach, intake preparation, fuel care, contamination rejection, satisfaction, damage inspection, repair, sealing, and departure.
+- Renee speaks only from authored Ferravine and battle state changes. The director uses priorities, cooldowns, and recent-history suppression; no random chatter timer exists.
+- The candidate bank contains 29 Renee clips (24 systemic and five intimate care phrases), 12 Ferravine body responses, three quarantined humming loops, five care-Foley families, and the recurring two-tap motif.
+- `ReneeVoice`, Ferravine body/Foley, music, command voice, and critical cues retain independent controls and ducking behavior. Every meaningful care sound has a semantic caption.
+- The combined Renee, Ferravine, Regnet, and Tank Kata lineage passes the production build, all 66 automated tests, deterministic combat simulations, and lint with zero errors. Browser preview verified the care scene, independent audio controls, first paired exchange, responsive caption spacing, and no application console errors.
+- Renee's rendered voice identity is unresolved: the requested provider voice ID was catalogued as Lila while every synthesis receipt reported Katie. These files and all three hums remain unheard and unaccepted in this runtime. Drew's casting and listening verdict is required before merge or deployment.
+- Production Sites version 100 remains unchanged. The candidate is code-complete on the draft review branch only.
