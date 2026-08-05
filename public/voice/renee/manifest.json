@@ -3,13 +3,13 @@
   "project": "Through the Slit",
   "character": "Renee",
   "relationship": "Renee speaks to Ferravine; Ferravine answers with her body.",
-  "status": "temporary-candidates-unheard-unaccepted",
+  "status": "accepted-by-drew",
   "renderedAt": "2026-08-05",
   "provider": "Cartesia",
   "model": "sonic-3.5",
   "providerReturnedVoiceName": "Katie - Friendly Fixer",
   "requestedVoiceId": "4af7c703-f2a9-45dd-a7fd-724cf7efc371",
-  "catalogMismatch": "Catalog search labeled this ID as Lila - Meditation Guide; every synthesis receipt returned Katie - Friendly Fixer. Final casting requires Drew's auditory acceptance.",
+  "catalogMismatch": "Catalog search labeled this ID as Lila - Meditation Guide; every synthesis receipt returned Katie - Friendly Fixer. Drew accepted the rendered voice after the bounded audition on 2026-08-05; the mismatch remains provenance, not a casting blocker.",
   "sampleRate": 24000,
   "channels": 1,
   "pcm": "s16le",
@@ -279,5 +279,12 @@
     "bodySource": "designed at runtime from provenance-locked project Foley and deterministic noise",
     "twoTapMotif": true,
     "scene": "Renee feeds and inspects Ferravine through the slit"
+  },
+  "humanAcceptance": {
+    "status": "accepted",
+    "authority": "Drew Clarke",
+    "acceptedAt": "2026-08-05",
+    "scope": "Renee rendered voice identity and bounded audition set",
+    "sourceReply": "accepteed"
   }
 }
