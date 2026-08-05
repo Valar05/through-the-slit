@@ -1653,8 +1653,11 @@ export default function GameClient() {
     try {
       hasChoice = window.localStorage.getItem(INTRO_CHOICE_KEY) !== null;
     } catch {}
-    setIntroMode("safe");
-    setIntroStage(hasChoice ? "hidden" : "consent");
+    const syncIntro = window.setTimeout(() => {
+      setIntroMode("safe");
+      setIntroStage(hasChoice ? "hidden" : "consent");
+    }, 0);
+    return () => window.clearTimeout(syncIntro);
   }, [introStage, settings.reducedFlashes, settings.reducedMotion, settingsLoaded]);
 
   const rememberIntroChoice = useCallback((choice: string) => {
