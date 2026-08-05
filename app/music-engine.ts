@@ -38,6 +38,7 @@ export class OstPlayer {
   private focusResumeTime = 0;
   private duckUntil = 0;
   private duckTimer = 0;
+  private careLayer = false;
 
   constructor() {
     const makeDeck = () => {
@@ -59,13 +60,19 @@ export class OstPlayer {
 
   private currentLevel() {
     const ducked = performance.now() < this.duckUntil;
-    return this.enabled ? MUSIC_VOLUME * (ducked ? 0.34 : 1) : 0;
+    const sceneLevel = this.careLayer ? 0.72 : 1;
+    return this.enabled ? MUSIC_VOLUME * sceneLevel * (ducked ? 0.34 : 1) : 0;
   }
 
   private applySteadyLevel() {
     if (!this.started || this.crossfading) return;
     this.decks[this.activeDeck].volume = this.currentLevel();
     this.decks[1 - this.activeDeck].volume = 0;
+  }
+
+  setCareLayer(active: boolean) {
+    this.careLayer = active;
+    this.applySteadyLevel();
   }
 
   duckFor(seconds: number) {
