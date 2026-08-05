@@ -36,6 +36,8 @@ export class OstPlayer {
   private crossfadeFrame = 0;
   private monitor = 0;
   private focusResumeTime = 0;
+  private duckUntil = 0;
+  private duckTimer = 0;
 
   constructor() {
     const makeDeck = () => {
@@ -55,15 +57,28 @@ export class OstPlayer {
     });
   }
 
+  private currentLevel() {
+    const ducked = performance.now() < this.duckUntil;
+    return this.enabled ? MUSIC_VOLUME * (ducked ? 0.34 : 1) : 0;
+  }
+
+  private applySteadyLevel() {
+    if (!this.started || this.crossfading) return;
+    this.decks[this.activeDeck].volume = this.currentLevel();
+    this.decks[1 - this.activeDeck].volume = 0;
+  }
+
+  duckFor(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    this.duckUntil = Math.max(this.duckUntil, performance.now() + seconds * 1000);
+    window.clearTimeout(this.duckTimer);
+    this.applySteadyLevel();
+    this.duckTimer = window.setTimeout(() => this.applySteadyLevel(), seconds * 1000 + 80);
+  }
+
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
-    if (!this.started) return;
-    const active = this.decks[this.activeDeck];
-    const inactive = this.decks[1 - this.activeDeck];
-    if (!this.crossfading) {
-      active.volume = enabled ? MUSIC_VOLUME : 0;
-      inactive.volume = 0;
-    }
+    this.applySteadyLevel();
   }
 
   isEnabled() {
@@ -81,7 +96,7 @@ export class OstPlayer {
     this.currentTrack = this.takeTrack();
     const active = this.decks[this.activeDeck];
     active.src = OST_TRACKS[this.currentTrack];
-    active.volume = this.enabled ? MUSIC_VOLUME : 0;
+    active.volume = this.currentLevel();
     this.primeNextDeck();
 
     // Both streaming decks are unlocked by the first gameplay gesture. The
@@ -109,6 +124,8 @@ export class OstPlayer {
       cancelAnimationFrame(this.crossfadeFrame);
       this.crossfading = false;
     }
+    window.clearTimeout(this.duckTimer);
+    this.duckUntil = 0;
     const active = this.decks[this.activeDeck];
     this.focusResumeTime = active.currentTime || 0;
     this.decks.forEach((deck) => {
@@ -141,7 +158,7 @@ export class OstPlayer {
     const active = this.decks[this.activeDeck];
     active.src = OST_TRACKS[this.currentTrack];
     active.currentTime = this.focusResumeTime;
-    active.volume = this.enabled ? MUSIC_VOLUME : 0;
+    active.volume = this.currentLevel();
     const inactive = this.decks[1 - this.activeDeck];
     inactive.src = OST_TRACKS[this.queuedTrack];
     inactive.currentTime = 0;
@@ -196,7 +213,7 @@ export class OstPlayer {
     const startedAt = performance.now();
     const fade = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / durationMs);
-      const level = this.enabled ? MUSIC_VOLUME : 0;
+      const level = this.currentLevel();
       outgoing.volume = level * (1 - progress);
       incoming.volume = level * progress;
       if (progress < 1) {
