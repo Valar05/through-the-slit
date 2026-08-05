@@ -15,7 +15,7 @@ const baseline = {
 
 test("Renee manifest is complete, captioned, state-driven, and asset-backed", () => {
   const cues = Object.values(RENEE_CUES);
-  assert.equal(cues.length, 24);
+  assert.equal(cues.length, 29);
   assert.equal(RENEE_POLICY.randomChatter, false);
   assert.equal(RENEE_POLICY.semanticCaptions, true);
   assert.equal(RENEE_POLICY.triggerModel, "authored-events-and-state-transitions-only");
