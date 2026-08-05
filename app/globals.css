@@ -45,6 +45,9 @@ button {
   top: max(8px, env(safe-area-inset-top));
   right: max(9px, env(safe-area-inset-right));
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 18px);
   gap: 5px;
 }
 
@@ -1710,7 +1713,7 @@ button {
 .settings-audio {
   width: min(420px, 100%);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -2552,7 +2555,7 @@ button {
 
 .care-captions p {
   display: grid;
-  grid-template-columns: 6rem 1fr;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
   gap: 0.8rem;
   margin: 0;
   line-height: 1.4;
@@ -2571,5 +2574,5 @@ button {
   .care-panel { justify-content: flex-start; padding: 1rem; }
   .care-panel h2 { font-size: clamp(1.8rem, 8vw, 3rem); }
   .care-captions { min-height: 0; }
-  .care-captions p { grid-template-columns: 5rem 1fr; }
+  .care-captions p { grid-template-columns: 7rem minmax(0, 1fr); }
 }
