@@ -60,6 +60,8 @@ import { SoundEngine } from "./sound-engine";
 import { getOstPlayer, OST_POLICY } from "./music-engine";
 import { ReneeDirector, RENEE_CUES, RENEE_POLICY } from "./renee-director.mjs";
 import { CARE_AUDIO_POLICY, CARE_SEQUENCE, FERRAVINE_CARE_CUES, RENEE_HUM_LOOPS } from "./care-audio.mjs";
+import { TANK_KATA_POLICY } from "./tank-kata-policy.mjs";
+import { TankKataVoiceConductor } from "./tank-kata-voice";
 import MendelJudgment, {
   loadLineageInState,
   loadObservedLineage,
@@ -1580,10 +1582,12 @@ export default function GameClient() {
   const crushMarkPoolRef = useRef<CrushMark[]>([]);
   const soundEngineRef = useRef<SoundEngine | null>(null);
   const reneeDirectorRef = useRef<ReneeDirector | null>(null);
+  const voiceEngineRef = useRef<TankKataVoiceConductor | null>(null);
   const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
   const pausedRef = useRef(false);
   const soundEnabledRef = useRef(true);
   const musicEnabledRef = useRef(true);
+  const voiceEnabledRef = useRef(true);
   const audioFocusMutedRef = useRef(false);
   const careAdvanceTimerRef = useRef(0);
   const pointers = useRef<
@@ -1606,6 +1610,7 @@ export default function GameClient() {
   >("idle");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [careStepIndex, setCareStepIndex] = useState(0);
@@ -1702,6 +1707,13 @@ export default function GameClient() {
       getOstPlayer().setEnabled(musicEnabled);
     }
   }, [musicEnabled]);
+
+  useEffect(() => {
+    voiceEnabledRef.current = voiceEnabled;
+    if (!audioFocusMutedRef.current) {
+      voiceEngineRef.current?.setEnabled(voiceEnabled);
+    }
+  }, [voiceEnabled]);
 
   useEffect(() => {
     soundEngineRef.current?.setReneeEnabled(settings.reneeVoice);
@@ -1935,6 +1947,17 @@ export default function GameClient() {
     const reneeDirector = new ReneeDirector(speakRenee);
     reneeDirector.setEnabled(settings.reneeVoice);
     reneeDirectorRef.current = reneeDirector;
+    const voice =
+      voiceEngineRef.current ??
+      new TankKataVoiceConductor(music, (caption, seconds) => {
+        const runtime = runtimeRef.current;
+        if (!runtime) return;
+        runtime.caption = caption;
+        runtime.captionClock = seconds;
+      });
+    voiceEngineRef.current = voice;
+    voice.setEnabled(voiceEnabled);
+    void voice.unlock();
     const old = runtimeRef.current;
     if (old) {
       projectilePoolRef.current.push(...old.projectiles.splice(0));
@@ -1978,6 +2001,8 @@ export default function GameClient() {
           }
           runtimeRef.current = runtime;
           reneeDirector.signal("wake", runtime.elapsed, true);
+          voice.resetForRun();
+          voice.trigger("force-enters");
           setHasActiveRun(true);
           setPaused(false);
           setMenuPanel("main");
@@ -1992,7 +2017,7 @@ export default function GameClient() {
         }
       });
     });
-  }, [coldSeed, musicEnabled, publishHud, settings.reneeVoice, soundEnabled, speakRenee]);
+  }, [coldSeed, musicEnabled, publishHud, settings.reneeVoice, soundEnabled, speakRenee, voiceEnabled]);
 
   const clearLiveInput = useCallback(() => {
     const runtime = runtimeRef.current;
@@ -2056,12 +2081,15 @@ export default function GameClient() {
       if (audioFocusMutedRef.current) return;
       audioFocusMutedRef.current = true;
       void soundEngineRef.current?.surrenderAudioFocus();
+      voiceEngineRef.current?.surrenderAudioFocus();
       getOstPlayer().surrenderAudioFocus();
     };
     const restoreFocusedAudio = () => {
       if (!audioFocusMutedRef.current || document.hidden) return;
       audioFocusMutedRef.current = false;
       void soundEngineRef.current?.reclaimAudioFocus(soundEnabledRef.current);
+      voiceEngineRef.current?.setEnabled(voiceEnabledRef.current);
+      voiceEngineRef.current?.reclaimAudioFocus();
       getOstPlayer().setEnabled(musicEnabledRef.current);
       void getOstPlayer().reclaimAudioFocus();
     };
@@ -2125,6 +2153,14 @@ export default function GameClient() {
     setMusicEnabled((current) => {
       const next = !current;
       getOstPlayer().setEnabled(next);
+      return next;
+    });
+  }, []);
+
+  const toggleVoice = useCallback(() => {
+    setVoiceEnabled((current) => {
+      const next = !current;
+      voiceEngineRef.current?.setEnabled(next);
       return next;
     });
   }, []);
@@ -2772,6 +2808,7 @@ export default function GameClient() {
     };
 
     let frame = 0;
+    let redirectHeld = false;
     let previous = performance.now();
     let hudClock = 0;
 
@@ -3874,6 +3911,7 @@ export default function GameClient() {
       }
       soundEngineRef.current?.playArmorImpact("penetration", face);
       reneeDirectorRef.current?.signal("penetration", runtime.elapsed);
+      voiceEngineRef.current?.trigger("body-pays");
       return "penetration";
     };
 
@@ -3885,6 +3923,15 @@ export default function GameClient() {
       if (runtime.keys.has("s")) leftDemand = -1;
       if (runtime.keys.has("arrowup")) rightDemand = 1;
       if (runtime.keys.has("arrowdown")) rightDemand = -1;
+
+      const opposedRedirect =
+        Math.abs(leftDemand) > 0.42 &&
+        Math.abs(rightDemand) > 0.42 &&
+        Math.sign(leftDemand) !== Math.sign(rightDemand);
+      if (opposedRedirect && !redirectHeld) {
+        voiceEngineRef.current?.trigger("turn-it");
+      }
+      redirectHeld = opposedRedirect;
 
       const direction =
         Math.sign(leftDemand + rightDemand) || Math.sign(tank.forwardVelocity) || 1;
@@ -5125,6 +5172,7 @@ export default function GameClient() {
       }) as {x:number;z:number;target:Defender} | null;
       const formationTarget = firingSolution?.target ?? null;
       formation.routeContested = routeContested;
+      const previousFormationState = formation.state;
       formation.state = formationStateFor({
         gap,
         cohesion: formation.cohesion,
@@ -5132,6 +5180,16 @@ export default function GameClient() {
         routeContested,
         breachWake: !!activeWake,
       });
+      if (formation.state !== previousFormationState) {
+        if (formation.state === "overrun") {
+          voiceEngineRef.current?.trigger("spear-outrun");
+        } else if (
+          formation.state === "separated" &&
+          previousFormationState !== "overrun"
+        ) {
+          voiceEngineRef.current?.trigger("never-evade");
+        }
+      }
       formation.connected = formation.state === "connected";
       formation.signalPulse += dt *
         (formation.state === "connected"
@@ -5499,6 +5557,7 @@ export default function GameClient() {
         );
         soundEngineRef.current?.playCapture();
         reneeDirectorRef.current?.signal("capture", runtime.elapsed);
+        voiceEngineRef.current?.trigger("take-the-acre");
         runtime.lastGraftKills = runtime.enemyKills;
         seedDefenseHorizon(
           runtime,
@@ -7319,6 +7378,13 @@ export default function GameClient() {
         >
           RENEE {settings.reneeVoice ? "ON" : "OFF"}
         </button>
+        <button
+          type="button"
+          aria-pressed={voiceEnabled}
+          onClick={toggleVoice}
+        >
+          COMMAND {voiceEnabled ? "ON" : "OFF"}
+        </button>
       </div>
       <button
         type="button"
@@ -7411,6 +7477,14 @@ export default function GameClient() {
         data-renee-casting={RENEE_POLICY.castingStatus}
         data-ferravine-care-cues={CARE_AUDIO_POLICY.bodyCueCount}
         data-renee-humming-loops={CARE_AUDIO_POLICY.hummingLoopCount}
+        data-voice-cues={TANK_KATA_POLICY.cueCount}
+        data-voice-tempo={TANK_KATA_POLICY.tempoBpm}
+        data-voice-meter={TANK_KATA_POLICY.meter}
+        data-voice-sync-delay={TANK_KATA_POLICY.maxSyncDelayMs}
+        data-voice-speaker={TANK_KATA_POLICY.speaker}
+        data-voice-role={TANK_KATA_POLICY.voiceRole}
+        data-voice-sync={TANK_KATA_POLICY.routine}
+        data-voice-warning-policy={TANK_KATA_POLICY.warnings}
       />
       <div className="sound-controls" role="group" aria-label="Audio controls">
         {screen === "playing" && !paused ? (
@@ -7449,6 +7523,15 @@ export default function GameClient() {
           onClick={() => updateSetting("reneeVoice", !settings.reneeVoice)}
         >
           RENEE {settings.reneeVoice ? "ON" : "OFF"}
+        </button>
+        <button
+          type="button"
+          className="sound-toggle voice-toggle"
+          aria-label={voiceEnabled ? "Mute Regnet command voice" : "Enable Regnet command voice"}
+          aria-pressed={voiceEnabled}
+          onClick={toggleVoice}
+        >
+          COMMAND {voiceEnabled ? "ON" : "OFF"}
         </button>
       </div>
 
