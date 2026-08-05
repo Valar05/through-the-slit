@@ -139,5 +139,6 @@ export const CARE_AUDIO_POLICY = Object.freeze({
   twoTapMotif: true,
   scene: "Renee feeds and inspects Ferravine through the slit",
   bodyResponsesAreDesigned: true,
-  hummingStatus: "candidate-unheard-unaccepted",
+  hummingStatus: "accepted-by-drew-sequenced-only",
+  mixPolicy: "voice, care Foley, body response, then optional hum; never simultaneous",
 });

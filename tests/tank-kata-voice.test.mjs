@@ -76,6 +76,10 @@ test("92 BPM pulse locks are bounded while voice ducks an untouched seven-master
   assert.match(voice, /cue\.definition\.urgent\s*\? 0/);
   assert.match(voice, /nextPulseDelayMs\(TANK_KATA_POLICY\.maxSyncDelayMs\)/);
   assert.match(voice, /duckForVoice/);
+  assert.match(voice, /suppressFor\(durationMs/);
+  assert.match(voice, /isSpeaking\(\)/);
+  assert.match(game, /commandVoice\?\.isSpeaking\(\)/);
+  assert.match(game, /commandVoice\?\.suppressFor/);
   assert.match(game, /COMMAND \{voiceEnabled \? "ON" : "OFF"\}/);
   assert.match(game, /data-voice-speaker=\{TANK_KATA_POLICY\.speaker\}/);
   assert.match(game, /data-voice-cues=\{TANK_KATA_POLICY\.cueCount\}/);

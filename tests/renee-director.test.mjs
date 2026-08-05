@@ -19,7 +19,8 @@ test("Renee manifest is complete, captioned, state-driven, and asset-backed", ()
   assert.equal(RENEE_POLICY.randomChatter, false);
   assert.equal(RENEE_POLICY.semanticCaptions, true);
   assert.equal(RENEE_POLICY.triggerModel, "authored-events-and-state-transitions-only");
-  assert.equal(RENEE_POLICY.castingStatus, "candidate-unaccepted");
+  assert.equal(RENEE_POLICY.castingStatus, "accepted-by-drew");
+  assert.equal(RENEE_POLICY.postSpeechGapSeconds, 2.5);
   assert.equal(new Set(cues.map((cue) => cue.path)).size, cues.length);
   for (const cue of cues) {
     assert.ok(cue.text.length >= 20, `${cue.id} needs a meaningful semantic caption`);
@@ -39,13 +40,14 @@ test("state transitions speak once without a chatter timer", () => {
   assert.deepEqual(emitted, ["first-motion"]);
 });
 
-test("urgent authored cues displace lower-priority queued speech", () => {
+test("Renee waits for the active line and a quiet beat before speaking again", () => {
   const emitted = [];
   const director = new ReneeDirector((cue) => emitted.push(cue.id));
   assert.equal(director.signal("small-arms", 1, true), true);
   assert.equal(director.signal("armor-bounce", 1.2), false);
   assert.equal(director.signal("artillery-incoming", 1.3), false);
-  assert.equal(director.flush(2.3), true);
+  assert.equal(director.flush(6), false);
+  assert.equal(director.flush(7.7), true);
   assert.deepEqual(emitted, ["small-arms", "artillery-incoming"]);
 });
 
@@ -64,8 +66,9 @@ test("critical damage wins when several state transitions arrive together", () =
     2,
   );
   assert.equal(emitted[0], "core-critical");
-  assert.equal(director.flush(3.2), true);
-  assert.equal(emitted[1], "formation-separated");
+  assert.equal(director.flush(8.4), false);
+  assert.equal(director.flush(8.5), true);
+  assert.equal(emitted[1], "front-wound");
 });
 
 test("Renee can be disabled independently", () => {

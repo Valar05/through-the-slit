@@ -13,7 +13,8 @@ test("the playable tending slice preserves every commissioned audio layer", asyn
   assert.equal(CARE_AUDIO_POLICY.bodyCueCount, 12);
   assert.equal(CARE_AUDIO_POLICY.hummingLoopCount, 3);
   assert.equal(CARE_AUDIO_POLICY.twoTapMotif, true);
-  assert.equal(CARE_AUDIO_POLICY.hummingStatus, "candidate-unheard-unaccepted");
+  assert.equal(CARE_AUDIO_POLICY.hummingStatus, "accepted-by-drew-sequenced-only");
+  assert.match(CARE_AUDIO_POLICY.mixPolicy, /never simultaneous/);
   assert.equal(CARE_SEQUENCE.length, 9);
   const usedBodies = new Set(CARE_SEQUENCE.flatMap((step) => step.bodyCues));
   assert.deepEqual([...usedBodies].sort(), Object.keys(FERRAVINE_CARE_CUES).sort());
@@ -42,4 +43,7 @@ test("the playable tending slice preserves every commissioned audio layer", asyn
   }
   assert.match(soundSource, /playReneeCareFoley/);
   assert.match(soundSource, /playReneeHum/);
+  assert.match(soundSource, /activeReneeSource/);
+  assert.match(gameSource, /voiceDelayMs/);
+  assert.match(gameSource, /bodyDurationMs/);
 });

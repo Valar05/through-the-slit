@@ -23,6 +23,7 @@ export class TankKataVoiceConductor {
   private current: PendingCue | null = null;
   private enabled = true;
   private scheduleTimer = 0;
+  private suppressedUntil = 0;
 
   constructor(
     private readonly music: OstPlayer,
@@ -67,6 +68,26 @@ export class TankKataVoiceConductor {
     this.audio.currentTime = 0;
     this.pending.length = 0;
     this.current = null;
+    this.suppressedUntil = 0;
+  }
+
+  isSpeaking() {
+    return this.current !== null && !this.audio.paused;
+  }
+
+  suppressFor(durationMs: number) {
+    const holdMs = Math.max(0, durationMs);
+    this.suppressedUntil = Math.max(this.suppressedUntil, performance.now() + holdMs);
+    window.clearTimeout(this.scheduleTimer);
+    if (this.current) {
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.current = null;
+    }
+    this.scheduleTimer = window.setTimeout(
+      () => this.pump(),
+      Math.max(0, this.suppressedUntil - performance.now()),
+    );
   }
 
   trigger(key: TankKataCue) {
@@ -125,6 +146,12 @@ export class TankKataVoiceConductor {
 
   private pump() {
     if (this.current || this.pending.length === 0) return;
+    const suppressionMs = this.suppressedUntil - performance.now();
+    if (suppressionMs > 0) {
+      window.clearTimeout(this.scheduleTimer);
+      this.scheduleTimer = window.setTimeout(() => this.pump(), suppressionMs);
+      return;
+    }
     const next = this.pending.shift() ?? null;
     if (!next) return;
     this.current = next;
@@ -141,6 +168,12 @@ export class TankKataVoiceConductor {
 
   private play(cue: PendingCue) {
     if (this.current !== cue) return;
+    const suppressionMs = this.suppressedUntil - performance.now();
+    if (suppressionMs > 0) {
+      window.clearTimeout(this.scheduleTimer);
+      this.scheduleTimer = window.setTimeout(() => this.play(cue), suppressionMs);
+      return;
+    }
     this.lastPlayed.set(cue.key, performance.now());
     this.publishCaption(cue.definition.caption, cue.definition.durationSeconds + 0.45);
 

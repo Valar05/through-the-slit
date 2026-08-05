@@ -127,6 +127,8 @@ export class SoundEngine {
   private reneeSamples = new Map<string, AudioBuffer>();
   private sampleLoad: Promise<void> | null = null;
   private pendingReneeCue: string | null = null;
+  private activeReneeSource: AudioBufferSourceNode | null = null;
+  private activeReneePriority = Number.NEGATIVE_INFINITY;
   private humSource: AudioBufferSourceNode | null = null;
   private currentHum: string | null = null;
   private sampleSequence = 0;
@@ -188,7 +190,10 @@ export class SoundEngine {
 
   setReneeEnabled(enabled: boolean) {
     this.reneeEnabled = enabled;
-    if (!enabled) this.stopReneeHum();
+    if (!enabled) {
+      this.stopReneeVoice();
+      this.stopReneeHum();
+    }
     if (!this.context) return;
     const now = this.context.currentTime;
     this.voice?.gain.setTargetAtTime(enabled ? 0.9 : 0, now, 0.025);
@@ -215,6 +220,11 @@ export class SoundEngine {
     }
     const bus = cue.priority >= 90 ? this.critical : this.voice;
     if (!bus) return false;
+    if (this.activeReneeSource && cue.priority <= this.activeReneePriority) {
+      return false;
+    }
+    this.stopReneeVoice();
+    this.stopReneeHum();
     const now = this.context.currentTime;
     const source = this.context.createBufferSource();
     const gain = this.context.createGain();
@@ -222,8 +232,27 @@ export class SoundEngine {
     gain.gain.setValueAtTime(cue.priority >= 90 ? 0.98 : 0.88, now);
     source.connect(gain);
     gain.connect(bus);
+    this.activeReneeSource = source;
+    this.activeReneePriority = cue.priority;
+    source.addEventListener("ended", () => {
+      if (this.activeReneeSource !== source) return;
+      this.activeReneeSource = null;
+      this.activeReneePriority = Number.NEGATIVE_INFINITY;
+    });
     source.start(now);
     return true;
+  }
+
+  isReneeSpeaking() {
+    return this.activeReneeSource !== null;
+  }
+
+  stopReneeVoice() {
+    try {
+      this.activeReneeSource?.stop();
+    } catch {}
+    this.activeReneeSource = null;
+    this.activeReneePriority = Number.NEGATIVE_INFINITY;
   }
 
   playReneeHum(mood: keyof typeof RENEE_HUM_LOOPS) {

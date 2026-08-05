@@ -1856,7 +1856,11 @@ export default function GameClient() {
     (cue: ReneeCue) => {
       const runtime = runtimeRef.current;
       if (!runtime || runtime.status === "dead" && cue.id !== "hull-death" && cue.id !== "party-death") return;
-      soundEngineRef.current?.playReneeCue(cue.id);
+      const commandVoice = voiceEngineRef.current;
+      if (commandVoice?.isSpeaking() && cue.priority < 90) return;
+      commandVoice?.suppressFor((cue.duration + 0.75) * 1000);
+      const played = soundEngineRef.current?.playReneeCue(cue.id);
+      if (!played) return;
       getOstPlayer().duckFor(cue.duration + 0.35);
       runtime.caption = `RENEE — ${cue.text}`;
       runtime.captionClock = Math.max(runtime.captionClock, cue.duration + 0.8);
@@ -1890,16 +1894,23 @@ export default function GameClient() {
       step.bodyCues.map((id: keyof typeof FERRAVINE_CARE_CUES) => FERRAVINE_CARE_CUES[id].caption).join(" "),
     );
     setCareHumCaption(RENEE_HUM_LOOPS[step.hum].caption);
-    sound?.playReneeCareFoley(step.careFoley);
-    sound?.playReneeHum(step.hum);
-    step.bodyCues.forEach((id: keyof typeof FERRAVINE_CARE_CUES, index: number) => {
-      window.setTimeout(() => sound?.playFerravineCareCue(id), index * 320);
-    });
+    sound?.stopReneeHum();
     if (cue && settings.reneeVoice) {
       sound?.playReneeCue(cue.id);
       getOstPlayer().duckFor(cue.duration + 0.35);
     }
-    const holdSeconds = Math.max(1.4, cue?.duration ?? 0.8);
+    const voiceDelayMs = cue && settings.reneeVoice ? cue.duration * 1000 + 350 : 0;
+    window.setTimeout(() => {
+      sound?.playReneeCareFoley(step.careFoley);
+      step.bodyCues.forEach((id: keyof typeof FERRAVINE_CARE_CUES, index: number) => {
+        window.setTimeout(() => sound?.playFerravineCareCue(id), index * 700);
+      });
+    }, voiceDelayMs);
+    const bodyDurationMs = Math.max(1, step.bodyCues.length) * 700;
+    if (!cue) {
+      window.setTimeout(() => sound?.playReneeHum(step.hum), voiceDelayMs + bodyDurationMs + 450);
+    }
+    const holdSeconds = Math.max(2.2, (voiceDelayMs + bodyDurationMs + 900) / 1000);
     window.clearTimeout(careAdvanceTimerRef.current);
     careAdvanceTimerRef.current = window.setTimeout(() => {
       if (careStepIndex >= CARE_SEQUENCE.length - 1) {
@@ -2000,7 +2011,6 @@ export default function GameClient() {
             runtime.heCycle = heShotInterval(1) - 1;
           }
           runtimeRef.current = runtime;
-          reneeDirector.signal("wake", runtime.elapsed, true);
           voice.resetForRun();
           voice.trigger("force-enters");
           setHasActiveRun(true);
@@ -3910,7 +3920,6 @@ export default function GameClient() {
         setCaption(runtime, "OLD FRONTAL SCAR OPENS — THE DEFENSE REMEMBERED", 4);
       }
       soundEngineRef.current?.playArmorImpact("penetration", face);
-      reneeDirectorRef.current?.signal("penetration", runtime.elapsed);
       voiceEngineRef.current?.trigger("body-pays");
       return "penetration";
     };
@@ -5556,7 +5565,6 @@ export default function GameClient() {
           4,
         );
         soundEngineRef.current?.playCapture();
-        reneeDirectorRef.current?.signal("capture", runtime.elapsed);
         voiceEngineRef.current?.trigger("take-the-acre");
         runtime.lastGraftKills = runtime.enemyKills;
         seedDefenseHorizon(

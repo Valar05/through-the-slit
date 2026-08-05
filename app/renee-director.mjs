@@ -237,7 +237,7 @@ export const RENEE_CUES = Object.freeze({
 });
 
 const RECENT_WINDOW = 3;
-const GLOBAL_GAP = 1.15;
+const POST_SPEECH_GAP = 2.5;
 
 export class ReneeDirector {
   constructor(emit) {
@@ -248,6 +248,7 @@ export class ReneeDirector {
     this.pending = null;
     this.previous = null;
     this.lastEmissionAt = -Infinity;
+    this.blockedUntil = -Infinity;
   }
 
   setEnabled(enabled) {
@@ -261,6 +262,7 @@ export class ReneeDirector {
     this.pending = null;
     this.previous = null;
     this.lastEmissionAt = -Infinity;
+    this.blockedUntil = -Infinity;
   }
 
   signal(id, now, force = false) {
@@ -270,7 +272,7 @@ export class ReneeDirector {
     const lastAt = this.lastCueAt.get(id) ?? -Infinity;
     if (!force && at - lastAt < cue.cooldown) return false;
     if (!force && this.recent.includes(id)) return false;
-    if (!force && at - this.lastEmissionAt < GLOBAL_GAP) {
+    if (at < this.blockedUntil) {
       if (!this.pending || cue.priority > this.pending.cue.priority) {
         this.pending = { cue, requestedAt: at };
       }
@@ -282,7 +284,7 @@ export class ReneeDirector {
   flush(now) {
     if (!this.pending || !this.enabled) return false;
     const at = Number.isFinite(now) ? now : 0;
-    if (at - this.lastEmissionAt < GLOBAL_GAP) return false;
+    if (at < this.blockedUntil) return false;
     const { cue } = this.pending;
     this.pending = null;
     const lastAt = this.lastCueAt.get(cue.id) ?? -Infinity;
@@ -303,10 +305,6 @@ export class ReneeDirector {
     if (snapshot.front <= 62 && previous.front > 62) candidates.push("front-wound");
     if (snapshot.leftTread <= 48 && previous.leftTread > 48) candidates.push("left-tread-wound");
     if (snapshot.rightTread <= 48 && previous.rightTread > 48) candidates.push("right-tread-wound");
-    if (["separated", "overrun"].includes(snapshot.formationState) &&
-        !["separated", "overrun"].includes(previous.formationState)) candidates.push("formation-separated");
-    if (snapshot.formationState === "connected" &&
-        ["separated", "overrun", "reconnecting"].includes(previous.formationState)) candidates.push("formation-reconnected");
     if (snapshot.suppression >= 70 && previous.suppression < 70) candidates.push("suppression-high");
     if (snapshot.suppression <= 18 && previous.suppression > 18) candidates.push("calm");
 
@@ -320,6 +318,7 @@ export class ReneeDirector {
   emitCue(cue, now) {
     this.lastCueAt.set(cue.id, now);
     this.lastEmissionAt = now;
+    this.blockedUntil = now + cue.duration + POST_SPEECH_GAP;
     this.recent = [cue.id, ...this.recent.filter((id) => id !== cue.id)].slice(0, RECENT_WINDOW);
     this.emit(cue);
     return true;
@@ -335,5 +334,7 @@ export const RENEE_POLICY = Object.freeze({
   bodyBus: "FerravineBody",
   criticalBus: "CriticalCue",
   temporaryVoice: "Katie - Friendly Fixer",
-  castingStatus: "candidate-unaccepted",
+  castingStatus: "accepted-by-drew",
+  postSpeechGapSeconds: POST_SPEECH_GAP,
+  commandOwnership: "Regnet owns run entry, penetration, formation breaks, and acre capture",
 });
