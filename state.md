@@ -85,3 +85,9 @@ GitHub now contains a genuine standalone itch build and a manual Butler workflow
 ### Remaining completion gate
 
 Drew listens to the bounded Renee audition set, accepts or rejects the voice identity, and explicitly authorizes publication to the already-public Through the Slit site. Until both decisions exist, Adam may prepare and verify the release but may not represent Renee's casting as accepted or deploy version 101 publicly.
+
+## Renee casting acceptance — 2026-08-05
+
+Drew replied “accepteed” after the bounded Renee audition. Adam interprets the clear ordinary typo as “accepted.” Renee's rendered voice identity is now accepted by Drew for the merged tending and gameplay system. The Lila/Katie provider-name mismatch remains preserved as provenance; it no longer blocks casting.
+
+Capability transition: voice candidate → human-accepted casting. This acceptance does not itself deploy Sites version 101 or authorize publication to the already-public production surface.
