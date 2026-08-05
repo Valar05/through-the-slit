@@ -1,20 +1,20 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "project": "Through the Slit",
   "character": "Renee",
   "relationship": "Renee speaks to Ferravine; Ferravine answers with her body.",
-  "status": "temporary-candidate-unaccepted",
+  "status": "temporary-candidates-unheard-unaccepted",
   "renderedAt": "2026-08-05",
   "provider": "Cartesia",
   "model": "sonic-3.5",
   "providerReturnedVoiceName": "Katie - Friendly Fixer",
   "requestedVoiceId": "4af7c703-f2a9-45dd-a7fd-724cf7efc371",
-  "catalogMismatch": "The catalog search labeled this ID as Lila - Meditation Guide; every synthesis receipt returned Katie - Friendly Fixer. Final casting requires Drew's auditory acceptance.",
+  "catalogMismatch": "Catalog search labeled this ID as Lila - Meditation Guide; every synthesis receipt returned Katie - Friendly Fixer. Final casting requires Drew's auditory acceptance.",
   "sampleRate": 24000,
   "channels": 1,
   "pcm": "s16le",
   "pitchSemitones": -1,
-  "cues": [
+  "spokenCues": [
     {
       "id": "wake",
       "file": "renee-wake-v1.wav",
@@ -206,6 +206,78 @@
       "bytes": 195884,
       "sha256": "d111a81ea36b66cd9bb9837cb592fa0e620df06c64c8b321095a41a1a9590b5e",
       "durationSeconds": 4.08
+    },
+    {
+      "id": "care-intake",
+      "file": "renee-care-intake-candidate-v1.wav",
+      "text": "Easy, Vine. Renee's got it.",
+      "bytes": 138284,
+      "sha256": "afce9395b8598d1e45986f825107932f309959fe4e0dcfd1f502ade8951d7686",
+      "durationSeconds": 2.88
+    },
+    {
+      "id": "care-fuel",
+      "file": "renee-care-fuel-candidate-v1.wav",
+      "text": "Slow mouthfuls. Taste it first.",
+      "bytes": 130604,
+      "sha256": "8fed8a87e31007df940ed92db6581a80ef992993c0b6cd4d3e6836935f8ed611",
+      "durationSeconds": 2.72
+    },
+    {
+      "id": "care-contamination",
+      "file": "renee-care-contamination-candidate-v1.wav",
+      "text": "No. Spit that filth out.",
+      "bytes": 111404,
+      "sha256": "907b00246ca6513b90f6d1520be4af53b17235ca7b2f508216a59354495d048a",
+      "durationSeconds": 2.32
+    },
+    {
+      "id": "care-full",
+      "file": "renee-care-full-candidate-v1.wav",
+      "text": "There. Fed, sealed, and beautiful.",
+      "bytes": 161324,
+      "sha256": "df316d690c36526f0c31a84b67f1e193c70f57e5c2bc6a4a22322bf45b7abd99",
+      "durationSeconds": 3.36
+    },
+    {
+      "id": "care-damage",
+      "file": "renee-care-damage-candidate-v1.wav",
+      "text": "Hold still, love. This part may bite.",
+      "bytes": 161324,
+      "sha256": "e9d35b281973b3ab3f705aa1173314550399bee48fa7026c418a8cb506b846c5",
+      "durationSeconds": 3.36
     }
-  ]
+  ],
+  "hummingLoops": [
+    {
+      "id": "hum-calm",
+      "file": "renee-hum-calm-candidate-v1.wav",
+      "text": "Mmm... mm-hm... mmm...",
+      "bytes": 69164,
+      "sha256": "2e8003f500820e163d1e48392505f350a4675965de000ef1215ec50cbe638940",
+      "durationSeconds": 1.44
+    },
+    {
+      "id": "hum-concerned",
+      "file": "renee-hum-concerned-candidate-v1.wav",
+      "text": "Mm... hm-mm... mm...",
+      "bytes": 38444,
+      "sha256": "051d4e07a7155ab9a160eef604147396d36bc9f6fff3edef79c5c499f5357138",
+      "durationSeconds": 0.8
+    },
+    {
+      "id": "hum-victorious",
+      "file": "renee-hum-victorious-candidate-v1.wav",
+      "text": "Mm-hm... mm-hm-hm... mmm.",
+      "bytes": 34604,
+      "sha256": "efb8618e2ca5ed4ee0c4d4975ef021a65663c7a5119a5197ac89daefbfad2dd5",
+      "durationSeconds": 0.72
+    }
+  ],
+  "careSystem": {
+    "bodyResponses": 12,
+    "bodySource": "designed at runtime from provenance-locked project Foley and deterministic noise",
+    "twoTapMotif": true,
+    "scene": "Renee feeds and inspects Ferravine through the slit"
+  }
 }
