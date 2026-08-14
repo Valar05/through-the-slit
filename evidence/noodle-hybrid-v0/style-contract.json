@@ -6,7 +6,7 @@
     "mined": true,
     "speculated": true,
     "prototyped": true,
-    "tested": false,
+    "tested": "PARTIAL_CONTRACT_CI_ONLY",
     "trainingEligible": false,
     "deployed": false,
     "userKept": false
