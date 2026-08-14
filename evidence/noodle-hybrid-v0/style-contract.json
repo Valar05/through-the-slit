@@ -1,0 +1,180 @@
+{
+  "schema": "noodle-hybrid-style-v0",
+  "project": "Through the Slit",
+  "status": {
+    "requested": true,
+    "mined": true,
+    "speculated": true,
+    "prototyped": true,
+    "tested": false,
+    "trainingEligible": false,
+    "deployed": false,
+    "userKept": false
+  },
+  "representation": {
+    "vectorMasterOwns": [
+      "identity",
+      "silhouette",
+      "attachment_points",
+      "contact_ownership",
+      "force_paths",
+      "pose_extremes",
+      "deformation_envelopes"
+    ],
+    "pixelWitnessOwns": [
+      "texture_quantization",
+      "edge_breakup",
+      "surface_damage",
+      "material_grit",
+      "debris",
+      "muzzle_and_impact_witness",
+      "low_resolution_training_raster"
+    ],
+    "forbiddenPixelOverrides": [
+      "anatomy",
+      "identity",
+      "contact_point",
+      "weapon_ownership",
+      "pose_chronology"
+    ]
+  },
+  "animation": {
+    "authoredExtremes": [
+      "guard",
+      "load",
+      "apex",
+      "contact",
+      "extract_or_rebound",
+      "recovery"
+    ],
+    "tweenPolicy": "selective_per_channel",
+    "globalSmoothstepForbidden": true,
+    "contactEventOwns": [
+      "body",
+      "weapon",
+      "target",
+      "pixel_effect",
+      "camera_pressure",
+      "audio_cue"
+    ],
+    "recoveryMustReturnToKnownState": true
+  },
+  "canonicalViews": [
+    "front",
+    "quarter_left",
+    "quarter_right",
+    "profile_left",
+    "profile_right",
+    "rear_quarter_left",
+    "rear_quarter_right"
+  ],
+  "materials": [
+    "wet_tissue",
+    "scar",
+    "bone",
+    "cloth",
+    "mud",
+    "steel",
+    "chitin"
+  ],
+  "primitiveFamilies": {
+    "anatomy": [
+      "torso_mass",
+      "limb",
+      "appendage",
+      "eye_sensor",
+      "maw_tool_interface",
+      "tissue_cable_noodle"
+    ],
+    "equipment": [
+      "barrel",
+      "blade",
+      "shield_scute",
+      "tendon_feed",
+      "organ_socket"
+    ],
+    "consequence": [
+      "dirt",
+      "blood",
+      "spark",
+      "steam",
+      "spore",
+      "tendon_snap",
+      "armor_chip"
+    ]
+  },
+  "mutationAxes": [
+    "proportion",
+    "curve_bias",
+    "spacing",
+    "line_weight",
+    "texture_density",
+    "damage_level",
+    "timing",
+    "overshoot_amplitude"
+  ],
+  "hardInvariants": [
+    "silhouette_readable_at_phone_scale",
+    "same_state_same_output",
+    "force_direction_matches_deformation",
+    "pixel_layer_does_not_invent_anatomy",
+    "contact_pose_is_authored_not_interpolated_midpoint",
+    "source_master_separate_from_training_raster",
+    "accessibility_preserves_causality_and_pose_order"
+  ],
+  "accessibility": {
+    "modes": [
+      "full",
+      "reduced_motion",
+      "reduced_flash",
+      "high_contrast"
+    ],
+    "reducedMotionPreserves": [
+      "pose_order",
+      "contact_timing",
+      "force_direction",
+      "silhouette",
+      "material_consequence"
+    ],
+    "reducedFlashPreserves": [
+      "impact_witness",
+      "damage_state",
+      "contact_readability"
+    ]
+  },
+  "trainingRecordRequiredFields": [
+    "id",
+    "lineage",
+    "subject",
+    "view",
+    "pose",
+    "force",
+    "materials",
+    "damage",
+    "accessibilityMode",
+    "seed",
+    "sourceMaster",
+    "derivedRaster",
+    "judgment"
+  ],
+  "trainingPromotion": {
+    "allowedJudgments": [
+      "KEEP",
+      "REJECT",
+      "PENDING"
+    ],
+    "requiresUserKeep": true,
+    "requiresDeterministicRegeneration": true,
+    "requiresNegativeFixtures": true,
+    "requiresProvenance": true
+  },
+  "speculatedLineages": [
+    "signed_distance_field",
+    "plotter_path",
+    "shader_raster_hybrid",
+    "skeletal_glyph",
+    "ascii_cell_animation",
+    "generative_hatching",
+    "particle_field_witness"
+  ]
+}
