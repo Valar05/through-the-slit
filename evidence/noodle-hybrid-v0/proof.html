@@ -1,0 +1,235 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Noodle Hybrid v0 — Through the Slit</title>
+<style>
+  :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #111; color: #eee; display: grid; min-height: 100vh; place-items: center; }
+  main { width: min(100vw, 900px); padding: 12px; }
+  .frame { position: relative; aspect-ratio: 16/9; overflow: hidden; border: 1px solid #666; background: #27251f; }
+  canvas, svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  canvas { image-rendering: pixelated; }
+  svg { pointer-events: none; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  button { min-height: 44px; padding: 8px 12px; font: inherit; }
+  .state { margin-left: auto; font-size: 12px; opacity: .85; }
+  .note { font-size: 12px; line-height: 1.45; opacity: .8; margin-top: 10px; }
+  .vector-outline { fill: none; stroke: #efe5cb; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .flesh { fill: #7c4d48; stroke: #efe5cb; stroke-width: 2; }
+  .bone { fill: #d5c59f; stroke: #2a2520; stroke-width: 1.5; }
+  .steel { fill: #5d6463; stroke: #d7d4c8; stroke-width: 1.5; }
+  .eye { fill: #f4d26b; stroke: #241f18; stroke-width: 1.4; }
+  .noodle { fill: none; stroke: #b87967; stroke-width: 5; stroke-linecap: round; }
+  .noodle-thin { fill: none; stroke: #e6b18d; stroke-width: 2.2; stroke-linecap: round; }
+  .hud { fill: rgba(15,15,12,.74); stroke: #d8cda8; stroke-width: 1; }
+  .hudtext { fill: #f2ead0; font-size: 5px; letter-spacing: .2px; }
+</style>
+<main>
+  <div class="frame" aria-label="Animated hybrid vector and pixel art proof for Through the Slit">
+    <canvas id="pixels" width="320" height="180"></canvas>
+    <svg id="vectors" viewBox="0 0 320 180" role="img" aria-labelledby="title desc">
+      <title id="title">Through the Slit hybrid art prototype</title>
+      <desc id="desc">A first-person biomechanical weapon aims at a fleshpunk infantry creature. Clean vector silhouette and rig animation are combined with deterministic low-resolution pixel texture, debris and damage effects.</desc>
+      <defs>
+        <clipPath id="slit"><path d="M8 30 Q160 12 312 30 L312 135 Q160 155 8 135 Z" /></clipPath>
+      </defs>
+      <g clip-path="url(#slit)">
+        <g id="enemy" transform="translate(160 82)">
+          <path id="enemyTorso" class="flesh" d="M-13 -22 C-25 -9 -24 16 -12 27 C-2 35 14 31 20 18 C26 4 22 -14 10 -23 C3 -29 -6 -28 -13 -22 Z"/>
+          <path id="enemyLegL" class="flesh" d="M-8 23 C-12 34 -14 43 -13 52 L-6 52 C-4 42 -2 33 1 25 Z"/>
+          <path id="enemyLegR" class="flesh" d="M9 22 C11 33 14 43 16 52 L22 51 C21 40 19 31 16 22 Z"/>
+          <path id="enemyArmL" class="flesh" d="M-15 -12 C-26 -7 -33 4 -32 15 C-28 15 -25 13 -22 10 C-20 3 -16 -1 -9 -5 Z"/>
+          <path id="enemyArmR" class="flesh" d="M15 -12 C26 -6 31 4 29 14 C25 13 22 11 19 7 C18 2 14 -2 9 -5 Z"/>
+          <ellipse class="bone" cx="0" cy="-28" rx="10" ry="9"/>
+          <ellipse class="eye" cx="-4" cy="-30" rx="2.5" ry="2"/>
+          <ellipse class="eye" cx="4" cy="-30" rx="2.5" ry="2"/>
+          <path class="vector-outline" d="M-5 -24 Q0 -21 6 -24"/>
+          <path id="noodle1" class="noodle" d="M-7 -34 C-18 -42 -24 -31 -18 -24"/>
+          <path id="noodle2" class="noodle" d="M0 -37 C-4 -50 11 -49 10 -36"/>
+          <path id="noodle3" class="noodle-thin" d="M7 -34 C21 -42 26 -29 17 -20"/>
+          <path id="enemyTool" class="steel" d="M25 8 L39 12 L37 16 L23 13 Z"/>
+        </g>
+        <g id="weapon" transform="translate(160 158)">
+          <path id="hand" class="flesh" d="M-43 13 C-38 -2 -27 -13 -14 -17 C-8 -19 -3 -14 -5 -8 C-10 1 -12 10 -9 19 Z"/>
+          <path id="barrel" class="steel" d="M-9 13 L-4 -54 L6 -54 L12 13 Z"/>
+          <path class="bone" d="M-8 -36 L-3 -47 L5 -47 L9 -36 Z"/>
+          <path class="noodle-thin" d="M-23 7 C-15 -3 -12 -18 -5 -28"/>
+          <path class="noodle-thin" d="M18 14 C14 0 11 -16 5 -29"/>
+        </g>
+      </g>
+      <path class="vector-outline" d="M8 30 Q160 12 312 30 M8 135 Q160 155 312 135" opacity=".7"/>
+      <rect class="hud" x="10" y="8" width="89" height="16" rx="2"/>
+      <text class="hudtext" x="15" y="15">VECTOR: identity / silhouette / rig</text>
+      <text class="hudtext" x="15" y="21">PIXEL: grit / damage / witness</text>
+    </svg>
+  </div>
+  <div class="controls">
+    <button id="pause">Pause</button>
+    <button id="variant">Variant 1</button>
+    <button id="motion">Reduced motion: off</button>
+    <button id="flash">Reduced flash: off</button>
+    <span class="state" id="state"></span>
+  </div>
+  <div class="note">Repository concept proof only. Vector geometry owns identity, contact and force. Pixel treatment witnesses the same semantic state and is forbidden from inventing anatomy. Training eligibility remains pending judgment and deterministic runtime verification.</div>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById('pixels');
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const enemy = document.getElementById('enemy');
+  const torso = document.getElementById('enemyTorso');
+  const armL = document.getElementById('enemyArmL');
+  const armR = document.getElementById('enemyArmR');
+  const weapon = document.getElementById('weapon');
+  const barrel = document.getElementById('barrel');
+  const stateEl = document.getElementById('state');
+  const pauseButton = document.getElementById('pause');
+  const variantButton = document.getElementById('variant');
+  const motionButton = document.getElementById('motion');
+  const flashButton = document.getElementById('flash');
+
+  let paused = false, reducedMotion = false, reducedFlash = false, variant = 1;
+  let pausedAt = 0, pauseStart = 0;
+  const cycleMs = 2400;
+  const seedBase = 0x51f17 ^ 0x2026;
+
+  function rng(seed) {
+    let x = seed | 0;
+    return () => {
+      x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+      return ((x >>> 0) / 4294967296);
+    };
+  }
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+  function mix(a,b,t){ return a+(b-a)*t; }
+  function ease(t){ return t*t*(3-2*t); }
+  function seg(t,a,b){ return clamp((t-a)/(b-a),0,1); }
+
+  const phases = [
+    ['guard',0,.16], ['load',.16,.31], ['apex',.31,.44], ['contact',.44,.54],
+    ['extract',.54,.72], ['recovery',.72,1]
+  ];
+  function phaseAt(t){ return phases.find(p => t >= p[1] && t < p[2])?.[0] || 'recovery'; }
+
+  function semantic(t) {
+    const contactPulse = 1 - Math.abs(clamp((t-.49)/.055,-1,1));
+    const load = ease(seg(t,.16,.31));
+    const drive = ease(seg(t,.31,.49));
+    const recover = ease(seg(t,.54,.92));
+    const force = drive * (1-recover);
+    return { t, phase: phaseAt(t), load, drive, contactPulse, recover, force, seed: seedBase + variant*9973 };
+  }
+
+  function drawPixelLayer(s) {
+    const r = rng(s.seed);
+    ctx.clearRect(0,0,320,180);
+    ctx.fillStyle = '#39362d'; ctx.fillRect(0,0,320,180);
+
+    // World-locked low-resolution mud / trench texture.
+    for (let y=24; y<154; y+=4) {
+      for (let x=0; x<320; x+=4) {
+        const n = r();
+        if (n > .54) {
+          ctx.fillStyle = n > .82 ? '#514634' : '#302d25';
+          ctx.fillRect(x,y,4,4);
+        }
+      }
+    }
+    ctx.fillStyle = '#1e1d19';
+    for (let x=0; x<320; x+=8) {
+      const ridge = 132 + Math.floor((r()-.5)*8);
+      ctx.fillRect(x,ridge,8,180-ridge);
+    }
+
+    // Deterministic pixel witnesses around enemy silhouette, never anatomy ownership.
+    const damage = variant === 1 ? .25 : variant === 2 ? .55 : .8;
+    const ex = 160 + Math.sin(s.t*Math.PI*2)*2;
+    const ey = 83;
+    for (let i=0;i<34;i++) {
+      const a = r()*Math.PI*2, rad = 12+r()*26;
+      const px = Math.floor(ex + Math.cos(a)*rad);
+      const py = Math.floor(ey + Math.sin(a)*rad*1.3);
+      if (r() < .45 + damage*.25) {
+        ctx.fillStyle = r()>.6 ? '#8e5b4d' : '#53483d';
+        ctx.fillRect(px,py,2,2);
+      }
+    }
+
+    // Shared-force impact debris. Direction agrees with weapon force.
+    if (s.contactPulse > .02) {
+      const amount = reducedMotion ? 8 : 24;
+      for (let i=0;i<amount;i++) {
+        const k = r();
+        const dx = (r()-.5) * (14 + 42*s.contactPulse) - 10*s.contactPulse;
+        const dy = (r()-.72) * (8 + 32*s.contactPulse);
+        ctx.fillStyle = k>.67 ? '#d0a45f' : k>.32 ? '#6b4038' : '#b6a075';
+        ctx.fillRect(Math.floor(160+dx), Math.floor(86+dy), 2+(k>.85?2:0), 2);
+      }
+      if (!reducedFlash) {
+        ctx.globalAlpha = .18*s.contactPulse;
+        ctx.fillStyle = '#fff1bd'; ctx.fillRect(0,0,320,180);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Pixelated vignette keeps the slit graphic readable at phone scale.
+    ctx.fillStyle = 'rgba(0,0,0,.72)';
+    ctx.fillRect(0,0,320,24); ctx.fillRect(0,154,320,26);
+    ctx.fillRect(0,24,8,130); ctx.fillRect(312,24,8,130);
+  }
+
+  function applyVectorRig(s) {
+    const motionScale = reducedMotion ? .35 : 1;
+    const anticipation = s.load * motionScale;
+    const force = s.force * motionScale;
+    const hit = s.contactPulse;
+
+    const enemyX = 160 + mix(0, -3, force) + Math.sin(s.t*Math.PI*2)*1.5;
+    const enemyY = 82 + mix(0, 2, anticipation) + mix(0, 3, hit);
+    const enemyRot = mix(0, -3, anticipation) + mix(0, 11, hit*motionScale) - mix(0,7,s.recover);
+    const enemyScaleX = 1 + .05*anticipation - .10*hit*motionScale;
+    const enemyScaleY = 1 - .04*anticipation + .07*hit*motionScale;
+    enemy.setAttribute('transform', `translate(${enemyX} ${enemyY}) rotate(${enemyRot}) scale(${enemyScaleX} ${enemyScaleY})`);
+
+    armL.setAttribute('transform', `rotate(${mix(0,-16,anticipation)+mix(0,26,hit)} -12 -8)`);
+    armR.setAttribute('transform', `rotate(${mix(0,13,anticipation)+mix(0,-24,hit)} 12 -8)`);
+    torso.setAttribute('opacity', String(1 - .12*hit));
+
+    const recoil = hit * motionScale;
+    const weaponY = 158 + mix(0,10,anticipation) - mix(0,19,s.drive) + mix(0,13,recoil);
+    const weaponRot = mix(0,-7,anticipation) + mix(0,5,recoil);
+    weapon.setAttribute('transform', `translate(160 ${weaponY}) rotate(${weaponRot})`);
+    barrel.setAttribute('transform', `scale(${1+force*.04} ${1+force*.12}) skewX(${-force*3})`);
+  }
+
+  let origin = performance.now();
+  function frame(now) {
+    if (paused) { requestAnimationFrame(frame); return; }
+    const t = ((now-origin) % cycleMs) / cycleMs;
+    const s = semantic(t);
+    drawPixelLayer(s); applyVectorRig(s);
+    stateEl.textContent = `${s.phase} · seed ${s.seed} · vector master + pixel witness`;
+    requestAnimationFrame(frame);
+  }
+
+  pauseButton.onclick = () => {
+    paused = !paused;
+    if (paused) { pauseStart = performance.now(); pauseButton.textContent = 'Resume'; }
+    else { origin += performance.now() - pauseStart; pauseButton.textContent = 'Pause'; }
+  };
+  variantButton.onclick = () => {
+    variant = variant % 3 + 1;
+    variantButton.textContent = `Variant ${variant}`;
+  };
+  motionButton.onclick = () => {
+    reducedMotion = !reducedMotion;
+    motionButton.textContent = `Reduced motion: ${reducedMotion?'on':'off'}`;
+  };
+  flashButton.onclick = () => {
+    reducedFlash = !reducedFlash;
+    flashButton.textContent = `Reduced flash: ${reducedFlash?'on':'off'}`;
+  };
+  requestAnimationFrame(frame);
+})();
+</script>
