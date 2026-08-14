@@ -50,6 +50,8 @@ Future campaign passes should continue archaeology for the actual Velora authori
 
 ## Prototype ruling
 
-Current packet is `PROTOTYPED`, not `TESTED`, `TRAINING_ELIGIBLE`, `DEPLOYED`, or `USER_KEPT`.
+Current packet is `PROTOTYPED` and **PARTIALLY TESTED**: the repository corpus/style invariant verifier passed in GitHub Actions. That verifies schema/negative-fixture consistency only. The animated browser proof has not yet been visually exercised on the commissioned phone path, so visual/runtime acceptance remains open.
+
+Still false: `TRAINING_ELIGIBLE`, `DEPLOYED`, `USER_KEPT`.
 
 The next meaningful selection pressure is a real execution/viewing pass of `proof.html`, followed by Noodle Queen/taste + accessibility judgment. Only surviving traits graduate.
