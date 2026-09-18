@@ -26,4 +26,4 @@ jobs:
           path: dist-itch
           if-no-files-found: error
           retention-days: 7
-      - run: npm run lint
+      - run: bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern dist-itch --ignore-pattern .next --ignore-pattern public/vendor
