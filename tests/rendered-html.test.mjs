@@ -179,6 +179,11 @@ test("ships the twin-tread survivor-like breach loop in a browser-only Three.js 
   assert.match(introSource, /\/ 0:29/);
   assert.match(gameSource, /Pause when interrupted/);
   assert.match(gameSource, /Wide tread touch zones/);
+  assert.ok(gameSource.includes('resolveInputMode(finePointer.matches, hover.matches)'));
+  assert.ok(gameSource.includes('inputModeRef.current !== "touch" || event.pointerType === "mouse"'));
+  assert.ok(gameSource.includes('inputMode === "touch" || option.key !== "wideTouch"'));
+  assert.ok(gameSource.includes('inputMode === "touch" &&'));
+  assert.ok(gameSource.includes('data-input-mode={inputMode}'));
   assert.match(gameSource, /PRESENT THE OBSERVATION TO MENDEL/);
   assert.match(gameSource, /loadObservedLineage\(\)/);
   const mendelSource = await readFile(

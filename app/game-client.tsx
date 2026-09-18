@@ -191,6 +191,12 @@ const DEFAULT_SETTINGS: GameSettings = {
   reneeVoice: true,
 };
 
+type InputMode = "desktop" | "touch";
+
+function resolveInputMode(anyFine: boolean, anyHover: boolean): InputMode {
+  return anyFine || anyHover ? "desktop" : "touch";
+}
+
 const HUMANE_SETTING_OPTIONS: Array<{
   key: keyof GameSettings;
   label: string;
@@ -1584,6 +1590,7 @@ export default function GameClient() {
   const reneeDirectorRef = useRef<ReneeDirector | null>(null);
   const voiceEngineRef = useRef<TankKataVoiceConductor | null>(null);
   const settingsRef = useRef<GameSettings>(DEFAULT_SETTINGS);
+  const inputModeRef = useRef<InputMode>("desktop");
   const pausedRef = useRef(false);
   const soundEnabledRef = useRef(true);
   const musicEnabledRef = useRef(true);
@@ -1613,6 +1620,7 @@ export default function GameClient() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>("desktop");
   const [careStepIndex, setCareStepIndex] = useState(0);
   const [careBusy, setCareBusy] = useState(false);
   const [careCompleted, setCareCompleted] = useState(false);
@@ -1626,6 +1634,30 @@ export default function GameClient() {
   >>(null);
   const [judgmentOpen, setJudgmentOpen] = useState(false);
   const [canonizationOpen, setCanonizationOpen] = useState(false);
+
+  useEffect(() => {
+    const finePointer = window.matchMedia("(any-pointer: fine)");
+    const hover = window.matchMedia("(any-hover: hover)");
+    const syncInputMode = () => {
+      const next = resolveInputMode(finePointer.matches, hover.matches);
+      inputModeRef.current = next;
+      setInputMode(next);
+      if (next === "desktop") {
+        for (const track of ["left", "right"] as const) {
+          pointers.current[track] = null;
+          if (runtimeRef.current && track === "left") runtimeRef.current.tank.leftDemand = 0;
+          if (runtimeRef.current && track === "right") runtimeRef.current.tank.rightDemand = 0;
+        }
+      }
+    };
+    syncInputMode();
+    finePointer.addEventListener?.("change", syncInputMode);
+    hover.addEventListener?.("change", syncInputMode);
+    return () => {
+      finePointer.removeEventListener?.("change", syncInputMode);
+      hover.removeEventListener?.("change", syncInputMode);
+    };
+  }, []);
 
   useEffect(() => {
     let loaded = DEFAULT_SETTINGS;
@@ -7243,6 +7275,7 @@ export default function GameClient() {
       const runtime = runtimeRef.current;
       if (!runtime) return;
       if (runtime.status !== "playing") return;
+      if (inputModeRef.current !== "touch" || event.pointerType === "mouse") return;
       const rect = event.currentTarget.getBoundingClientRect();
       const x = (event.clientX - rect.left) / rect.width;
       const touchEdge = settingsRef.current.wideTouch ? 0.4 : 0.32;
@@ -7348,7 +7381,7 @@ export default function GameClient() {
         changed during a paused run.
       </p>
       <div className="settings-grid">
-        {HUMANE_SETTING_OPTIONS.map((option) => (
+        {HUMANE_SETTING_OPTIONS.filter((option) => inputMode === "touch" || option.key !== "wideTouch").map((option) => (
           <button
             key={option.key}
             type="button"
@@ -7409,10 +7442,12 @@ export default function GameClient() {
       <p className="eyebrow">THE BODY HAS TWO COMMANDS</p>
       <h2 id="controls-title">HOW TO DRIVE</h2>
       <div className="control-ledger">
-        <article>
-          <strong>TOUCH</strong>
-          <p>Drag upward or downward on the left and right edges to drive each living tread.</p>
-        </article>
+        {inputMode === "touch" && (
+          <article>
+            <strong>TOUCH</strong>
+            <p>Drag upward or downward on the left and right edges to drive each living tread.</p>
+          </article>
+        )}
         <article>
           <strong>KEYBOARD</strong>
           <p>W / S drive the left tread. ↑ / ↓ drive the right. P or Escape pauses.</p>
@@ -7458,6 +7493,7 @@ export default function GameClient() {
     <main
       className={`game-shell game-${screen}${paused ? " is-paused" : ""}${settings.reducedMotion ? " humane-reduced-motion" : ""}${settings.highContrast ? " humane-high-contrast" : ""}${settings.largeHud ? " humane-large-hud" : ""}`}
       data-paused={paused ? "true" : "false"}
+      data-input-mode={inputMode}
     >
       <canvas
         ref={terrainCanvasRef}
