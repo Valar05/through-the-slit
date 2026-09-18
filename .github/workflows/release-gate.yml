@@ -18,4 +18,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - run: npm run build:itch
+      - name: Upload itch release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: through-the-slit-${{ github.sha }}-dist-itch
+          path: dist-itch
+          if-no-files-found: error
+          retention-days: 7
       - run: npm run lint
