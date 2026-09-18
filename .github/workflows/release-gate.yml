@@ -36,4 +36,4 @@ jobs:
           path: dist-crazygames
           if-no-files-found: error
           retention-days: 7
-      - run: npm run lint -- --ignore-pattern dist-itch --ignore-pattern dist-crazygames
+      - run: npm run lint -- --ignore-pattern dist-itch --ignore-pattern dist-crazygames --ignore-pattern .crazygames-public
