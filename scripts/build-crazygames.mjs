@@ -26,7 +26,7 @@ cpSync(sourcePublic, stagedPublic, {
 const stagedOst = join(stagedPublic, "ost");
 mkdirSync(stagedOst, { recursive: true });
 for (const name of readdirSync(ostSource).filter((name) => name.endsWith(".mp3")).sort()) {
-  run("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", join(ostSource, name), "-map_metadata", "0", "-codec:a", "libmp3lame", "-b:a", "88k", "-write_xing", "0", join(stagedOst, name)]);
+  run("ffmpeg", ["-nostdin", "-v", "error", "-y", "-i", join(ostSource, name), "-map_metadata", "0", "-codec:a", "libmp3lame", "-b:a", "80k", "-write_xing", "0", join(stagedOst, name)]);
 }
 
 const stagedCinematic = join(stagedPublic, "cinematics", "through-the-slit-intro-v4.mp4");
