@@ -37,6 +37,8 @@ yarn-error.log*
 next-env.d.ts
 /dist/
 /dist-itch/
+/dist-crazygames/
+/.crazygames-public/
 /.wrangler/
 /.sites-runtime/
 /outputs/

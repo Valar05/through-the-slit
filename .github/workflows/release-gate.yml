@@ -26,4 +26,12 @@ jobs:
           path: dist-itch
           if-no-files-found: error
           retention-days: 7
+      - run: npm run build:crazygames
+      - name: Upload CrazyGames release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: through-the-slit-${{ github.sha }}-dist-crazygames
+          path: dist-crazygames
+          if-no-files-found: error
+          retention-days: 7
       - run: npm run lint -- --ignore-pattern dist-itch
